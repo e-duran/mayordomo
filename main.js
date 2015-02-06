@@ -31,9 +31,5 @@ var env = process.env.NODE_ENV || "c9";
 var config = require(__dirname + '/config/' + env + '.js');
 global.config = config;
 
-var models = require("./models");
-models.sequelize.sync({ force: false }).then(function () {
-    app.listen(config.port);
-});
-
+app.listen(config.port);
 console.log('Express server for Mayordomo started on port %s', config.port);

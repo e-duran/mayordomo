@@ -12,10 +12,9 @@
     "bluebird": "^2.9.6",
     "express": "~3.2.4",
     "mongoose": "^3.8.22",
-    "mysql": "^2.5.4",
     "request": "^2.53.0",
     "rss": "^1.1.1",
-    "sequelize": "^2.0.0-rc8",
+    "xmldom": "^0.1.19",
     "xpath": "0.0.9"
   },
   "scripts": {
