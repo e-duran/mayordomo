@@ -24,9 +24,6 @@ app.get('/processors/movies', moviesProcessor.execute);
 var moviesFeed = require('./feeds/movies');
 app.get('/rss/movies', moviesFeed.generate);
 
-var test = require('./test');
-app.get('/test', test.handle);
-
 var env = process.env.NODE_ENV || "c9";
 var config = require(__dirname + '/config/' + env + '.js');
 global.config = config;
