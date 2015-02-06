@@ -1,7 +1,0 @@
-{
-    "username": "eadl",
-    "password": null,
-    "database": "mayordomo",
-    "host": "127.0.0.1",
-    "dialect": "mysql"
-}
