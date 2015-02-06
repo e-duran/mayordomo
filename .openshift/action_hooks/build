@@ -1,0 +1,1 @@
+cp $OPENSHIFT_DATA_DIR/OpenShift.js $OPENSHIFT_REPO_DIR/config
