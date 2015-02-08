@@ -7,8 +7,8 @@ exports.generate = function (req, res) {
         feed;
     res.type('xml');
     feed = new RSS({
-        title: 'Blush dancers',
-        description: 'Calendar of Blush dancers',
+        title: 'Blush',
+        description: 'Calendar of events at Blush',
         feed_url: '{0}/rss/blush'.format(global.config.publicHost),
         site_url: 'http://www.blushexotic.com/girls/feature-dancers/',
         image_url: 'http://www.blushexotic.com/files/2014/12/favico_blush_noborder_logo1.png',
