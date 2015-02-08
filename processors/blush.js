@@ -10,11 +10,11 @@ function createDancers(res, promise, dancers, Dancer, findDancerPromiseResults) 
         var errorMessage,
             rejectionReason,
             dancerExists,
-            dancer = dancers[index];
+            dancer = dancers[index].toObject();
         if (findDancerResult.isFulfilled()) {
             dancerExists = findDancerResult.value() !== null;
             if (dancerExists) {
-                errorMessage = "Dancer {0} already exists\r\n".format(dancer.Name);
+                errorMessage = "Dancer {0} already exists\r\n".format(dancer.name);
                 res.write(errorMessage);
                 return promise.resolve({ dancerExists: true });
             }
@@ -22,7 +22,7 @@ function createDancers(res, promise, dancers, Dancer, findDancerPromiseResults) 
         }
         rejectionReason = findDancerResult.reason();
         if (rejectionReason.handled === undefined) {
-            errorMessage = "Error while finding dancer {0}: {1}\r\n".format(dancer.Name, rejectionReason);
+            errorMessage = "Error while finding dancer {0}: {1}\r\n".format(dancer.name, rejectionReason);
             res.write(errorMessage);
         }
         return promise.reject({ handled: true });

@@ -24,7 +24,7 @@ exports.generate = function (req, res) {
                 title:  dancers[i].name,
                 description: '<p><img src="{0}"></p><p>Event dates: {1}</p><p><a href="{2}">View full resolution photo</a></p>'.format(dancers[i].photoUrl, dancers[i].dates, dancers[i].fullResolutionPhotoUrl),
                 url: dancers[i].url,
-                guid: dancers[i]._id.toString(),
+                guid: dancers[i].id,
                 author: 'Mayordomo',
                 date: dancers[i].createdAt
             });
