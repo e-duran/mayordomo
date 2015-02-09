@@ -1,8 +1,9 @@
 var mongoose = require('mongoose');
 
-// The properties of the movie schema will be in Pascal case because that's how OMDb returns them in their JSON.
+// Some properties of the movie schema will be in Pascal case because that's how the Open Movie database API returns movie information in their JSON format.
 var MovieSchema = new mongoose.Schema({
-  Title: String
+  Title: String,
+  createdAt: { type: Date, default: Date.now }
 }, { strict: false });
 
 module.exports = mongoose.model('Movie', MovieSchema);

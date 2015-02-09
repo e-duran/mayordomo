@@ -4,12 +4,13 @@ function requestMovieCalendar(request) {
     var today = new Date(),
         thisYear = today.getFullYear(),
         thisMonth = today.getMonth() + 1,
-        nextMonth = today.getMonth() + 2,
-        day = nextMonth === 12 ? "31" : "01",
+        nextMonth = thisMonth + 1,
+        day,
         movieCalendar = 'https://www.google.com/calendar/feeds/pfutdblf1gi8jmfsvroh76f6jg%40group.calendar.google.com/public/basic?start-min={0}-{1}-01T00:00:00&start-max={0}-{2}-{3}T00:00:00&orderby=starttime&sortorder=a';
 
-    thisMonth = thisMonth < 10 ? '0' + thisMonth : thisMonth;
     nextMonth = nextMonth === 13 ? 12 : nextMonth;
+    day = nextMonth === 12 ? "31" : "01",
+    thisMonth = thisMonth < 10 ? '0' + thisMonth : thisMonth;
     nextMonth = nextMonth < 10 ? '0' + nextMonth : nextMonth;
     movieCalendar = movieCalendar.format(thisYear, thisMonth, nextMonth, day);
 

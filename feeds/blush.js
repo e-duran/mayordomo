@@ -3,10 +3,10 @@
 exports.generate = function (req, res) {
     var mongoose = require('mongoose'),
         Dancer = require('../schemas/dancer.js'),
-        RSS = require('rss'),
+        Rss = require('rss'),
         feed;
     res.type('xml');
-    feed = new RSS({
+    feed = new Rss({
         title: 'Blush',
         description: 'Calendar of events at Blush',
         feed_url: '{0}/rss/blush'.format(global.config.publicHost),
@@ -19,7 +19,7 @@ exports.generate = function (req, res) {
     mongoose.connect(global.config.mongoUrl);
     Dancer.find().limit(20).sort('-createdAt').exec().then(function (dancers) {
         var i;
-        for (i = dancers.length - 1; i > -1; i--) {
+        for (i = 0; i < dancers.length; i++) {
             feed.item({
                 title:  dancers[i].name,
                 description: '<p><img src="{0}"></p><p>Event dates: {1}</p><p><a href="{2}">View full resolution photo</a></p>'.format(dancers[i].photoUrl, dancers[i].dates, dancers[i].fullResolutionPhotoUrl),
