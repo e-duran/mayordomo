@@ -29,7 +29,7 @@ exports.generate = function (req, res) {
     content = '<p><img src="{0}"></p>';
     attributesOffset = 1;
     for (i = 0; i < attributes.length; i++) {
-        content += '<div><strong>{0}</strong>: {1}<div/>'.format(attributes[i], '{' + (i + attributesOffset) + '}');
+        content += '<strong>{0}</strong>: {1}<br/>'.format(attributes[i], '{' + (i + attributesOffset) + '}');
     }
     Movie.find().limit(20).sort('-createdAt').exec().then(function (movies) {
         for (i = 0; i < movies.length; i++) {

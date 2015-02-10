@@ -23,6 +23,8 @@ var moviesProcessor = require('./processors/movies');
 app.get('/processors/movies', moviesProcessor.execute);
 var moviesFeed = require('./feeds/movies');
 app.get('/rss/movies', moviesFeed.generate);
+var markAsInteresting = require('./processors/markMovieAsInteresting');
+app.get('/processors/markAsInteresting/:id', markAsInteresting.execute);
 
 var env = process.env.NODE_ENV || "c9";
 var config = require(__dirname + '/config/' + env + '.js');
