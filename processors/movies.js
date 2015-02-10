@@ -1,18 +1,32 @@
 "use strict";
 
-function requestMovieCalendar(request) {
+function requestMovieCalendar(request, startDate, endDate) {
     var today = new Date(),
         thisYear = today.getFullYear(),
         thisMonth = today.getMonth() + 1,
         nextMonth = thisMonth + 1,
         day,
-        movieCalendar = 'https://www.google.com/calendar/feeds/pfutdblf1gi8jmfsvroh76f6jg%40group.calendar.google.com/public/basic?start-min={0}-{1}-01T00:00:00&start-max={0}-{2}-{3}T00:00:00&orderby=starttime&sortorder=a';
+        startMin,
+        startMax,
+        timePart = 'T00:00:00',
+        movieCalendar = 'https://www.google.com/calendar/feeds/pfutdblf1gi8jmfsvroh76f6jg%40group.calendar.google.com/public/basic?start-min={0}&start-max={1}&orderby=starttime&sortorder=a';
 
     nextMonth = nextMonth === 13 ? 12 : nextMonth;
     day = nextMonth === 12 ? '31' : '01';
     thisMonth = thisMonth < 10 ? '0' + thisMonth : thisMonth;
     nextMonth = nextMonth < 10 ? '0' + nextMonth : nextMonth;
-    movieCalendar = movieCalendar.format(thisYear, thisMonth, nextMonth, day);
+
+    if (startDate) {
+        startMin = startDate + timePart;
+    } else {
+        startMin = '{0}-{1}-01'.format(thisYear, thisMonth) + timePart;
+    }
+    if (endDate) {
+        startMax = endDate + timePart;
+    } else {
+        startMax = '{0}-{1}-{2}'.format(thisYear, nextMonth, day) + timePart;
+    }
+    movieCalendar = movieCalendar.format(startMin, startMax);
 
     return request(movieCalendar);
 }
@@ -207,7 +221,7 @@ exports.execute = function (req, res) {
     var promise = require("bluebird"),
         request = promise.promisify(require('request'));
     res.type('text');
-    requestMovieCalendar(request).spread(function (calendarResponse, calendarBody) {
+    requestMovieCalendar(request, req.query.startDate, req.query.endDate).spread(function (calendarResponse, calendarBody) {
         processMovieCalendar(res, request, promise, calendarResponse, calendarBody);
     }).catch(function (calendarRequestError) {
         res.write("Cannot retrieve movie calendar via GET request, got error " + calendarRequestError);
