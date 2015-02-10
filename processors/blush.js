@@ -10,7 +10,7 @@ function createDancers(res, promise, dancers, Dancer, findDancerPromiseResults) 
         var errorMessage,
             rejectionReason,
             dancerExists,
-            dancer = dancers[index].toObject();
+            dancer = dancers[index];
         if (findDancerResult.isFulfilled()) {
             dancerExists = findDancerResult.value() !== null;
             if (dancerExists) {
@@ -47,7 +47,7 @@ exports.execute = function (req, res) {
             nodes,
             dancers,
             i,
-            classNode,
+            classAttribute,
             nameNode,
             name,
             datesNode,
@@ -63,7 +63,7 @@ exports.execute = function (req, res) {
             spaceIndex,
             findDancerPromises;
 
-        if (requestError === null && response.statusCode === 200) {
+        if (!requestError && response.statusCode === 200) {
             res.write("Retrieved feature dancers Web page via GET request\r\n");
             startContentIndex = body.indexOf('<div id="full-width" class="content">');
             endContentIndex = body.indexOf('<!-- end main content holder (#content/#full-width) -->', startContentIndex);
@@ -76,36 +76,36 @@ exports.execute = function (req, res) {
 
             doc = new Dom().parseFromString(content);
             nodes = xpath.select("/div/div/div/div/div", doc);
-            if (nodes === null || (!nodes && nodes.length === 0)) {
+            if (!nodes || nodes.length === 0) {
                 return error(res, "Cannot find individual dancers content");
             }
             dancers = [];
             for (i = 1; i < nodes.length; i++) {
-                classNode = xpath.select1("/div/div/div/div/div[" + i + "]/@class", doc);
-                if (classNode !== null && (classNode.value.indexOf('services-no-content') > -1 || classNode.value.indexOf('clear') > -1)) {
+                classAttribute = xpath.select1("/div/div/div/div/div[" + i + "]/@class", doc);
+                if (!classAttribute || classAttribute.value.indexOf('services-no-content') > -1 || classAttribute.value.indexOf('clear') > -1) {
                     continue;
                 }
 
                 nameNode = xpath.select1("/div/div/div/div/div[" + i + "]/a/div/img/@alt", doc);
-                name = nameNode === null ? null : nameNode.value;
+                name = !nameNode ? null : nameNode.value;
                 datesNode = xpath.select("/div/div/div/div/div[" + i + "]/div/div/p/text()", doc);
-                dates = datesNode === null ? null : datesNode.toString();
+                dates = !datesNode ? null : datesNode.toString();
                 urlNode = xpath.select1("/div/div/div/div/div[" + i + "]/a/@href", doc);
-                url = urlNode === null ? null : 'http://www.blushexotic.com' + urlNode.value;
+                url = !urlNode ? null : 'http://www.blushexotic.com' + urlNode.value;
                 photoUrlNode = xpath.select1("/div/div/div/div/div[" + i + "]/a/div/img/@src", doc);
-                photoUrl = photoUrlNode === null ? null : photoUrlNode.value;
+                photoUrl = !photoUrlNode ? null : photoUrlNode.value;
                 fullResolutionPhotoUrl = null;
 
-                if (name === null) {
+                if (!name) {
                     return error(res, "Cannot find name for dancer");
                 }
-                if (dates === null) {
+                if (!dates) {
                     return error(res, "Cannot find dates for dancer");
                 }
-                if (url === null) {
+                if (!url) {
                     return error(res, "Cannot find URL for dancer");
                 }
-                if (photoUrl === null) {
+                if (!photoUrl) {
                     return error(res, "Cannot find photo URL for dancer");
                 }
                 dashIndex = photoUrl.lastIndexOf('-');
@@ -126,6 +126,9 @@ exports.execute = function (req, res) {
             }
             res.write("Finished parsing dancers content\r\n");
             mongoose.connect(global.config.mongoUrl);
+            mongoose.connection.on('error', function (connectionError) {
+                error(res, 'Connection error: ' + connectionError.message);
+            });
             findDancerPromises = dancers.map(function (dancer) {
                 return Dancer.findOne({ name: dancer.name, dates: dancer.dates }).exec();
             });
@@ -152,10 +155,10 @@ exports.execute = function (req, res) {
                 res.end();
             });
         } else {
-            if (requestError === null) {
-                return error(res, "Cannot retrieve feature dancers Web page via GET request, got status code: " + response.statusCode);
+            if (requestError) {
+                return error(res, "Cannot retrieve feature dancers Web page via GET request, got " + requestError);
             }
-            return error(res, "Cannot retrieve feature dancers Web page via GET request, got error: " + requestError);
+            return error(res, "Cannot retrieve feature dancers Web page via GET request, got status code: " + response.statusCode);
         }
     });
 };

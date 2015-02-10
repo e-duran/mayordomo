@@ -25,6 +25,10 @@ exports.generate = function (req, res) {
     });
 
     mongoose.connect(global.config.mongoUrl);
+    mongoose.connection.on('error', function (connectionError) {
+        res.status(500).send('Connection error: ' + connectionError.message);
+        return;
+    });
     attributes = ['Rated', 'Released', 'Runtime', 'Genre', 'Director', 'Writer', 'Actors', 'Plot', 'Country', 'Awards'];
     content = '<p><img src="{0}"></p>';
     attributesOffset = 1;

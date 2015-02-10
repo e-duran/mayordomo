@@ -6,6 +6,11 @@ exports.execute = function (req, res) {
         message;
     res.type('text');
     mongoose.connect(global.config.mongoUrl);
+    mongoose.connection.on('error', function (connectionError) {
+        res.write('Connection error: ' + connectionError.message);
+        res.end();
+        return;
+    });
     Movie.update({ _id: id }, { isInteresting: true }, function (error, numberAffected) {
         if (error) {
             message = 'Error while updating movie {0}: {1}'.format(id, error);

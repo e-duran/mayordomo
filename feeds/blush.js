@@ -17,6 +17,10 @@ exports.generate = function (req, res) {
     });
 
     mongoose.connect(global.config.mongoUrl);
+    mongoose.connection.on('error', function (connectionError) {
+        res.status(500).send('Connection error: ' + connectionError.message);
+        return;
+    });
     Dancer.find().limit(20).sort('-createdAt').exec().then(function (dancers) {
         var i;
         for (i = 0; i < dancers.length; i++) {

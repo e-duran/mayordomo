@@ -153,7 +153,6 @@ function processMovieCalendar(res, request, promise, calendarResponse, calendarB
         doc,
         select,
         nodes,
-        db,
         movieTitles,
         firstShowingUrls,
         movieRequests;
@@ -168,13 +167,17 @@ function processMovieCalendar(res, request, promise, calendarResponse, calendarB
     doc = new Dom().parseFromString(calendarBody);
     select = xpath.useNamespaces({"atom": "http://www.w3.org/2005/Atom"});
     nodes = select('//atom:feed/atom:entry/atom:title/text()', doc);
-    if (nodes === null || (nodes !== null && nodes.length === 0)) {
+    if (!nodes || nodes.length === 0) {
         res.write("Cannot find movie entries in calendar feed");
         res.end();
         return;
     }
     mongoose.connect(global.config.mongoUrl);
-    db = mongoose.connection;
+    mongoose.connection.on('error', function (connectionError) {
+        res.write('Connection error: ' + connectionError.message);
+        res.end();
+        return;
+    });
     movieTitles = nodes.map(function (titleNode) {
         return titleNode.nodeValue;
     });
@@ -211,7 +214,7 @@ function processMovieCalendar(res, request, promise, calendarResponse, calendarB
                 }
             }
         });
-        db.close();
+        mongoose.connection.close();
         res.write("Finished processing movie calendar\r\n");
         res.end();
     });
