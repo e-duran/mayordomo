@@ -31,13 +31,6 @@ function requestMovieCalendar(request, startDate, endDate) {
     return request(movieCalendar);
 }
 
-function isValidDate(date) {
-    if (Object.prototype.toString.call(date) !== "[object Date]") {
-        return false;
-    }
-    return !isNaN(date.getTime());
-}
-
 function getMovieDocument(Movie, movieInfo, firstShowingUrl) {
     var none = 'N/A',
         noPoster = 'http://www.sourcecreative.net/wp-content/uploads/2013/11/values-are-not-a-poster.jpg',
@@ -76,7 +69,7 @@ function getMovieDocument(Movie, movieInfo, firstShowingUrl) {
     if (isNaN(movie.year)) {
         movie.year = null;
     }
-    if (!isValidDate(movie.releasedToTheatersDate)) {
+    if (!movie.releasedToTheatersDate.isValid()) {
         movie.releasedToTheatersDate = null;
     }
     if (movie.year === null || movie.releasedToTheatersDate === null || movie.runtime === null || movie.year < previousYear || movie.imdbId.substring(0, 2).toLowerCase() !== 'tt') {
@@ -111,7 +104,7 @@ function processMovieRequests(res, promise, movies, Movie, movieTitles, firstSho
             res.write(errorMessage);
             return promise.reject({ handled: true });
         }
-        errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got error: {1}\r\n'.format(movieTitles[index], movieRequestResult.reason());
+        errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got: {1}\r\n'.format(movieTitles[index], movieRequestResult.reason());
         res.write(errorMessage);
         return promise.reject({ handled: true });
     });
@@ -227,7 +220,7 @@ exports.execute = function (req, res) {
     requestMovieCalendar(request, req.query.startDate, req.query.endDate).spread(function (calendarResponse, calendarBody) {
         processMovieCalendar(res, request, promise, calendarResponse, calendarBody);
     }).catch(function (calendarRequestError) {
-        res.write("Cannot retrieve movie calendar via GET request, got error " + calendarRequestError);
+        res.write("Cannot retrieve movie calendar via GET request, got " + calendarRequestError);
         res.end();
     });
 };
