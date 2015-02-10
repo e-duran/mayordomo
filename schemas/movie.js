@@ -1,9 +1,44 @@
 var mongoose = require('mongoose');
 
-// Some properties of the movie schema will be in Pascal case because that's how the Open Movie database API returns movie information in their JSON format.
 var MovieSchema = new mongoose.Schema({
-  Title: String,
-  createdAt: { type: Date, default: Date.now }
-}, { strict: false });
+        title: String,
+        year: Number,
+        rated: String,
+        releasedToTheatersDate: Date,
+        runtimeInMinutes: Number,
+        genre: String,
+        director: String,
+        writer: String,
+        actors: String,
+        plot: String,
+        language: String,
+        country: String,
+        awards: String,
+        poster: String,
+        metascore: String,
+        imdbRating: Number,
+        imdbVotes: String,
+        imdbId: String,
+        tomatoMeter: Date,
+        tomatoImage: String,
+        tomatoRating: Number,
+        tomatoReviews: Number,
+        tomatoFresh: Number,
+        tomatoRotten: Number,
+        tomatoConsensus: String,
+        tomatoUserMeter: Number,
+        tomatoUserRating: Number,
+        tomatoUserReviews: Number,
+        releasedToDvdDate: Date,
+        producer: String,
+        webSite: String,
+        firstShowingUrl: String,
+        needsReview: { type: Boolean, 'default': false },
+        isInteresting: Boolean,
+        postProcessingCompleted: { type: Boolean, 'default': false },
+        createdAt: { type: Date, 'default': Date.now },
+        modifiedAt: Date,
+        postProcessedAt: Date
+    });
 
 module.exports = mongoose.model('Movie', MovieSchema);

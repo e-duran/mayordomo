@@ -9,7 +9,7 @@ function requestMovieCalendar(request) {
         movieCalendar = 'https://www.google.com/calendar/feeds/pfutdblf1gi8jmfsvroh76f6jg%40group.calendar.google.com/public/basic?start-min={0}-{1}-01T00:00:00&start-max={0}-{2}-{3}T00:00:00&orderby=starttime&sortorder=a';
 
     nextMonth = nextMonth === 13 ? 12 : nextMonth;
-    day = nextMonth === 12 ? "31" : "01",
+    day = nextMonth === 12 ? '31' : '01';
     thisMonth = thisMonth < 10 ? '0' + thisMonth : thisMonth;
     nextMonth = nextMonth < 10 ? '0' + nextMonth : nextMonth;
     movieCalendar = movieCalendar.format(thisYear, thisMonth, nextMonth, day);
@@ -17,33 +17,87 @@ function requestMovieCalendar(request) {
     return request(movieCalendar);
 }
 
-function processMovieRequests(res, promise, movies, Movie, movieTitles, movieRequestResults) {
+function isValidDate(date) {
+    if (Object.prototype.toString.call(date) !== "[object Date]") {
+        return false;
+    }
+    return !isNaN(date.getTime());
+}
+
+function getMovieDocument(Movie, movieInfo, firstShowingUrl) {
+    var none = 'N/A',
+        noPoster = 'http://www.sourcecreative.net/wp-content/uploads/2013/11/values-are-not-a-poster.jpg',
+        previousYear = new Date().getFullYear() - 1,
+        movie,
+        runtimeInMinutes,
+        runtimeInMinutesEndIndex;
+    runtimeInMinutes = movieInfo.Runtime === none ? null : movieInfo.Runtime;
+    if (runtimeInMinutes !== null) {
+        runtimeInMinutesEndIndex = runtimeInMinutes.indexOf(' ');
+        if (runtimeInMinutesEndIndex > 0) {
+            runtimeInMinutes = Number(runtimeInMinutes.substring(0, runtimeInMinutesEndIndex));
+            if (isNaN(runtimeInMinutes)) {
+                runtimeInMinutes = null;
+            }
+        }
+    }
+    movie = new Movie({
+        title: movieInfo.Title,
+        year: movieInfo.Year === none ? null : Number(movieInfo.Year),
+        rated: movieInfo.Rated,
+        releasedToTheatersDate: movieInfo.Released === none ? null : new Date(movieInfo.Released),
+        runtimeInMinutes: runtimeInMinutes,
+        genre: movieInfo.Genre,
+        director: movieInfo.Director,
+        writer: movieInfo.Writer,
+        actors: movieInfo.Actors,
+        plot: movieInfo.Plot,
+        language: movieInfo.Language,
+        country: movieInfo.Country,
+        awards: movieInfo.Awards,
+        poster: movieInfo.Poster === none ? noPoster : movieInfo.Poster,
+        imdbId: movieInfo.imdbID,
+        firstShowingUrl: firstShowingUrl
+    });
+    if (isNaN(movie.year)) {
+        movie.year = null;
+    }
+    if (!isValidDate(movie.releasedToTheatersDate)) {
+        movie.releasedToTheatersDate = null;
+    }
+    if (movie.year === null || movie.releasedToTheatersDate === null || movie.runtime === null || movie.year < previousYear || movie.imdbId.substring(0, 2).toLowerCase() !== 'tt') {
+        movie.needsReview = true;
+    }
+    return movie;
+}
+
+function processMovieRequests(res, promise, movies, Movie, movieTitles, firstShowingUrls, movieRequestResults) {
     var findMoviePromises = movieRequestResults.map(function (movieRequestResult, index) {
         var errorMessage,
             resultValue,
             movieResponse,
             movieResponseBody,
-            movie;
+            movieInfo;
 
         if (movieRequestResult.isFulfilled()) {
             resultValue = movieRequestResult.value();
             movieResponse = resultValue[0];
             movieResponseBody = resultValue[1];
             if (movieResponse.statusCode !== 200) {
-                errorMessage = "Cannot retrieve movie information for '{0}' via GET request, got status code: {0}\r\n".format(movieTitles[index], movieResponse.statusCode);
+                errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got status code: {0}\r\n'.format(movieTitles[index], movieResponse.statusCode);
                 res.write(errorMessage);
                 return promise.reject(errorMessage);
             }
-            movie = JSON.parse(movieResponseBody);
-            if (movie.Response) {
-                movies[index] = movie;
-                return Movie.findOne({ imdbID: movie.imdbID }).exec();
+            movieInfo = JSON.parse(movieResponseBody);
+            if (movieInfo.Response) {
+                movies[index] = getMovieDocument(Movie, movieInfo, firstShowingUrls[index]);
+                return Movie.findOne({ imdbId: movies[index].imdbId }).exec();
             }
-            errorMessage = "Movie information for '{0}' was not found at OMDb\r\n".format(movieTitles[index]);
+            errorMessage = 'Movie information for "{0}" was not found at the Open Movie Database (OMDb)\r\n'.format(movieTitles[index]);
             res.write(errorMessage);
             return promise.reject({ handled: true });
         }
-        errorMessage = "Cannot retrieve movie information for '{0}' via GET request, got error: {1}\r\n".format(movieTitles[index], movieRequestResult.reason());
+        errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got error: {1}\r\n'.format(movieTitles[index], movieRequestResult.reason());
         res.write(errorMessage);
         return promise.reject({ handled: true });
     });
@@ -59,7 +113,7 @@ function saveMovies(res, promise, movies, Movie, findMoviePromiseResults) {
         if (findMovieResult.isFulfilled()) {
             movieExistsInStore = findMovieResult.value() !== null;
             if (movieExistsInStore) {
-                errorMessage = "Movie '{0}' already exists\r\n".format(movie.Title);
+                errorMessage = 'Movie "{0}" already exists\r\n'.format(movie.title);
                 res.write(errorMessage);
                 return promise.resolve({ movieExists: true });
             }
@@ -67,7 +121,7 @@ function saveMovies(res, promise, movies, Movie, findMoviePromiseResults) {
         }
         rejectionReason = findMovieResult.reason();
         if (rejectionReason.handled === undefined) {
-            errorMessage = "Error while finding movie '{0}': {1}\r\n".format(movie.Title, rejectionReason);
+            errorMessage = 'Error while finding movie "{0}": {1}\r\n'.format(movie.title, rejectionReason);
             res.write(errorMessage);
         }
         return promise.reject({ handled: true });
@@ -87,6 +141,7 @@ function processMovieCalendar(res, request, promise, calendarResponse, calendarB
         nodes,
         db,
         movieTitles,
+        firstShowingUrls,
         movieRequests;
 
     if (calendarResponse.statusCode !== 200) {
@@ -106,12 +161,24 @@ function processMovieCalendar(res, request, promise, calendarResponse, calendarB
     }
     mongoose.connect(global.config.mongoUrl);
     db = mongoose.connection;
-    movieTitles = nodes.map(function (titleNode) { return titleNode.nodeValue; });
+    movieTitles = nodes.map(function (titleNode) {
+        return titleNode.nodeValue;
+    });
+    nodes = select('//atom:feed/atom:entry/atom:summary/text()', doc);
+    firstShowingUrls = nodes.map(function (summaryNode) {
+        var summary = summaryNode.nodeValue,
+            urlStartIndex = summary.indexOf('http://'),
+            url = null;
+        if (urlStartIndex > 0) {
+            url = summary.substring(urlStartIndex);
+        }
+        return url;
+    });
     movieRequests = movieTitles.map(function (movieTitle) {
         return request(movieInfo.format(movieTitle));
     });
     promise.settle(movieRequests).then(function (movieRequestResults) {
-        return processMovieRequests(res, promise, movies, Movie, movieTitles, movieRequestResults);
+        return processMovieRequests(res, promise, movies, Movie, movieTitles, firstShowingUrls, movieRequestResults);
     }).settle().then(function (findMoviePromiseResults) {
         return saveMovies(res, promise, movies, Movie, findMoviePromiseResults);
     }).settle().then(function (createMoviePromisesResults) {
@@ -121,12 +188,12 @@ function processMovieCalendar(res, request, promise, calendarResponse, calendarB
             if (createMoviePromisesResult.isFulfilled()) {
                 resultValue = createMoviePromisesResult.value();
                 if (resultValue.movieExists === undefined) {
-                    res.write("Movie '{0}' created\r\n".format(movies[index].Title));
+                    res.write('Movie "{0}" created\r\n'.format(movies[index].title));
                 }
             } else {
                 rejectionReason = createMoviePromisesResult.reason();
                 if (rejectionReason.handled === undefined) {
-                    res.write("Error while creating movie '{0}': {1}\r\n".format(movies[index].Title), rejectionReason);
+                    res.write('Error while creating movie "{0}": {1}\r\n'.format(movies[index].title), rejectionReason);
                 }
             }
         });
