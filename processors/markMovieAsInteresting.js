@@ -5,7 +5,7 @@ exports.execute = function (req, res) {
         id = req.params.id,
         message;
     res.type('text');
-    mongoose.connect(global.config.mongoUrl+'gaga');
+    mongoose.connect(global.config.mongoUrl);
     Movie.update({ _id: id }, { isInteresting: true }, function (error, numberAffected) {
         if (error) {
             message = 'Error while updating movie {0}: {1}'.format(id, error);
