@@ -78,7 +78,7 @@ function getMovieDocument(Movie, movieInfo, firstShowingUrl) {
     return movie;
 }
 
-function processMovieRequests(res, promise, movies, Movie, movieTitles, firstShowingUrls, movieRequestResults) {
+function processMovieRequests(res, Promise, movies, Movie, movieTitles, firstShowingUrls, movieRequestResults) {
     var findMoviePromises = movieRequestResults.map(function (movieRequestResult, index) {
         var errorMessage,
             resultValue,
@@ -93,7 +93,7 @@ function processMovieRequests(res, promise, movies, Movie, movieTitles, firstSho
             if (movieResponse.statusCode !== 200) {
                 errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got status code: {0}\r\n'.format(movieTitles[index], movieResponse.statusCode);
                 res.write(errorMessage);
-                return promise.reject(errorMessage);
+                return Promise.reject(errorMessage);
             }
             movieInfo = JSON.parse(movieResponseBody);
             if (movieInfo.Response) {
@@ -102,16 +102,16 @@ function processMovieRequests(res, promise, movies, Movie, movieTitles, firstSho
             }
             errorMessage = 'Movie information for "{0}" was not found at the Open Movie Database (OMDb)\r\n'.format(movieTitles[index]);
             res.write(errorMessage);
-            return promise.reject({ handled: true });
+            return Promise.reject({ handled: true });
         }
         errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got: {1}\r\n'.format(movieTitles[index], movieRequestResult.reason());
         res.write(errorMessage);
-        return promise.reject({ handled: true });
+        return Promise.reject({ handled: true });
     });
     return findMoviePromises;
 }
 
-function saveMovies(res, promise, movies, Movie, findMoviePromiseResults) {
+function saveMovies(res, Promise, movies, Movie, findMoviePromiseResults) {
     var createMoviePromises = findMoviePromiseResults.map(function (findMovieResult, index) {
         var errorMessage,
             rejectionReason,
@@ -122,7 +122,7 @@ function saveMovies(res, promise, movies, Movie, findMoviePromiseResults) {
             if (movieExistsInStore) {
                 errorMessage = 'Movie "{0}" already exists\r\n'.format(movie.title);
                 res.write(errorMessage);
-                return promise.resolve({ movieExists: true });
+                return Promise.resolve({ movieExists: true });
             }
             return Movie.create(movie);
         }
@@ -131,12 +131,12 @@ function saveMovies(res, promise, movies, Movie, findMoviePromiseResults) {
             errorMessage = 'Error while finding movie "{0}": {1}\r\n'.format(movie.title, rejectionReason);
             res.write(errorMessage);
         }
-        return promise.reject({ handled: true });
+        return Promise.reject({ handled: true });
     });
     return createMoviePromises;
 }
 
-function processMovieCalendar(res, request, promise, calendarResponse, calendarBody) {
+function processMovieCalendar(res, request, Promise, calendarResponse, calendarBody) {
     var xpath = require('xpath'),
         Dom = require('xmldom').DOMParser,
         mongoose = require('mongoose'),
@@ -187,10 +187,10 @@ function processMovieCalendar(res, request, promise, calendarResponse, calendarB
     movieRequests = movieTitles.map(function (movieTitle) {
         return request(movieInfo.format(movieTitle));
     });
-    promise.settle(movieRequests).then(function (movieRequestResults) {
-        return processMovieRequests(res, promise, movies, Movie, movieTitles, firstShowingUrls, movieRequestResults);
+    Promise.settle(movieRequests).then(function (movieRequestResults) {
+        return processMovieRequests(res, Promise, movies, Movie, movieTitles, firstShowingUrls, movieRequestResults);
     }).settle().then(function (findMoviePromiseResults) {
-        return saveMovies(res, promise, movies, Movie, findMoviePromiseResults);
+        return saveMovies(res, Promise, movies, Movie, findMoviePromiseResults);
     }).settle().then(function (createMoviePromisesResults) {
         createMoviePromisesResults.map(function (createMoviePromisesResult, index) {
             var resultValue,
@@ -214,11 +214,11 @@ function processMovieCalendar(res, request, promise, calendarResponse, calendarB
 }
 
 exports.execute = function (req, res) {
-    var promise = require("bluebird"),
-        request = promise.promisify(require('request'));
+    var Promise = require("bluebird"),
+        request = Promise.promisify(require('request'));
     res.type('text');
     requestMovieCalendar(request, req.query.startDate, req.query.endDate).spread(function (calendarResponse, calendarBody) {
-        processMovieCalendar(res, request, promise, calendarResponse, calendarBody);
+        processMovieCalendar(res, request, Promise, calendarResponse, calendarBody);
     }).catch(function (calendarRequestError) {
         res.write("Cannot retrieve movie calendar via GET request, got " + calendarRequestError);
         res.end();

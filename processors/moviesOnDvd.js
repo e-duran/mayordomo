@@ -26,7 +26,7 @@ function updateMovie(movie, movieInfo) {
     return movie;
 }
 
-function processMovieInfoRequests(res, promise, movies, movieInfoRequestResults) {
+function processMovieInfoRequests(res, Promise, movies, movieInfoRequestResults) {
     var promises = movieInfoRequestResults.map(function (movieRequestResult, index) {
         var errorMessage,
             resultValue,
@@ -43,20 +43,20 @@ function processMovieInfoRequests(res, promise, movies, movieInfoRequestResults)
             if (movieResponse.statusCode !== 200) {
                 errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got status code: {0}\r\n'.format(movie.title, movieResponse.statusCode);
                 res.write(errorMessage);
-                return promise.reject(errorMessage);
+                return Promise.reject(errorMessage);
             }
             movieInfo = JSON.parse(movieResponseBody);
             if (movieInfo.Response) {
                 movie = updateMovie(movie, movieInfo);
-                return promise.resolve(movie);
+                return Promise.resolve(movie);
             }
             errorMessage = 'Movie information for "{0}" was not found at the Open Movie Database (OMDb)\r\n'.format(movie.title);
             res.write(errorMessage);
-            return promise.reject({ handled: true });
+            return Promise.reject({ handled: true });
         }
         errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got: {1}\r\n'.format(movie.title, movieRequestResult.reason());
         res.write(errorMessage);
-        return promise.reject({ handled: true });
+        return Promise.reject({ handled: true });
     });
     return promises;
 }
@@ -72,7 +72,7 @@ exports.execute = function (req, res) {
         res.status(500).send('Connection error: ' + connectionError.message);
         return;
     });
-    Movie.find({ needsReview: false, postProcessingCompleted: false}).limit(20).exec().then(function (movies) {
+    Movie.find({ needsReview: false, postProcessingCompleted: false}).exec().then(function (movies) {
         var movieInfoRequests = movies.map(function (movie) {
             return request('http://www.omdbapi.com/?i={0}&plot=full&r=json&tomatoes=true'.format(movie.imdbId));
         });

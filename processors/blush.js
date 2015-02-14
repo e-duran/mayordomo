@@ -5,7 +5,7 @@ function error(res, message) {
     res.end();
 }
 
-function createDancers(res, promise, dancers, Dancer, findDancerPromiseResults) {
+function createDancers(res, Promise, dancers, Dancer, findDancerPromiseResults) {
     var promises = findDancerPromiseResults.map(function (findDancerResult, index) {
         var errorMessage,
             rejectionReason,
@@ -16,7 +16,7 @@ function createDancers(res, promise, dancers, Dancer, findDancerPromiseResults) 
             if (dancerExists) {
                 errorMessage = "Dancer {0} already exists\r\n".format(dancer.name);
                 res.write(errorMessage);
-                return promise.resolve({ dancerExists: true });
+                return Promise.resolve({ dancerExists: true });
             }
             return Dancer.create(dancer);
         }
@@ -25,7 +25,7 @@ function createDancers(res, promise, dancers, Dancer, findDancerPromiseResults) 
             errorMessage = "Error while finding dancer {0}: {1}\r\n".format(dancer.name, rejectionReason);
             res.write(errorMessage);
         }
-        return promise.reject({ handled: true });
+        return Promise.reject({ handled: true });
     });
     return promises;
 }
@@ -34,7 +34,7 @@ exports.execute = function (req, res) {
     var request = require('request');
     res.type('text');
     request('http://www.blushexotic.com/girls/feature-dancers/', function (requestError, response, body) {
-        var promise = require("bluebird"),
+        var Promise = require("bluebird"),
             mongoose = require('mongoose'),
             Dancer = require('../schemas/dancer.js'),
             xpath = require('xpath'),
@@ -132,8 +132,8 @@ exports.execute = function (req, res) {
             findDancerPromises = dancers.map(function (dancer) {
                 return Dancer.findOne({ name: dancer.name, dates: dancer.dates }).exec();
             });
-            promise.settle(findDancerPromises).then(function (findDancerPromiseResults) {
-                return createDancers(res, promise, dancers, Dancer, findDancerPromiseResults);
+            Promise.settle(findDancerPromises).then(function (findDancerPromiseResults) {
+                return createDancers(res, Promise, dancers, Dancer, findDancerPromiseResults);
             }).settle().then(function (createDancersPromiseResults) {
                 createDancersPromiseResults.map(function (createDancersPromiseResult, index) {
                     var resultValue,
