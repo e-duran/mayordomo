@@ -13,10 +13,26 @@ Date.prototype.isValid = function () {
     return !isNaN(this.getTime());
 };
 
+var env = process.env.NODE_ENV || "c9";
+var config = require(__dirname + '/config/' + env + '.js');
+global.config = config;
+
 var express = require('express');
 var app = express();
 
 app.use(express.logger());
+app.use(express.bodyParser());
+app.use(express.methodOverride());
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+    if ('OPTIONS' == req.method) {
+        res.send(200);
+    } else {
+        next();
+    }
+});
 
 var blushProcessor = require('./processors/blush');
 app.get('/processors/blush', blushProcessor.execute);
@@ -32,9 +48,8 @@ app.get('/processors/markAsInteresting/:id', interestingMovieProcessor.execute);
 var moviesOnDvdProcessor = require('./processors/moviesOnDvd');
 app.get('/processors/moviesOnDvd', moviesOnDvdProcessor.execute);
 
-var env = process.env.NODE_ENV || "c9";
-var config = require(__dirname + '/config/' + env + '.js');
-global.config = config;
+var movieApi = require('./api/movies');
+movieApi.register(app);
 
 app.listen(config.port, config.host);
 console.log('Express server for Mayordomo started on port %s', config.port);

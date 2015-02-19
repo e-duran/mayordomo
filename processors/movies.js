@@ -52,7 +52,7 @@ function getMovieDocument(Movie, movieInfo, firstShowingUrl) {
         title: movieInfo.Title,
         year: movieInfo.Year === none ? null : Number(movieInfo.Year),
         rated: movieInfo.Rated,
-        releasedToTheatersDate: movieInfo.Released === none ? null : new Date(movieInfo.Released),
+        releasedDate: movieInfo.Released === none ? null : new Date(movieInfo.Released),
         runtimeInMinutes: runtimeInMinutes,
         genre: movieInfo.Genre,
         director: movieInfo.Director,
@@ -69,10 +69,10 @@ function getMovieDocument(Movie, movieInfo, firstShowingUrl) {
     if (isNaN(movie.year)) {
         movie.year = null;
     }
-    if (!movie.releasedToTheatersDate.isValid()) {
-        movie.releasedToTheatersDate = null;
+    if (!movie.releasedDate.isValid()) {
+        movie.releasedDate = null;
     }
-    if (movie.year === null || movie.releasedToTheatersDate === null || movie.runtime === null || movie.year < previousYear || movie.imdbId.substring(0, 2).toLowerCase() !== 'tt') {
+    if (movie.year === null || movie.releasedDate === null || movie.runtime === null || movie.year < previousYear || movie.imdbId.substring(0, 2).toLowerCase() !== 'tt') {
         movie.needsReview = true;
     }
     return movie;

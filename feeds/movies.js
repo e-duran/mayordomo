@@ -38,7 +38,7 @@ exports.generate = function (req, res) {
     Movie.find().limit(20).sort('-createdAt').exec().then(function (movies) {
         for (i = 0; i < movies.length; i++) {
             movie = movies[i];
-            description = content.format(movie.poster, movie.rated, movie.releasedToTheatersDate.toDateString().substring(4), movie.runtimeInMinutes + ' minutes', movie.genre, movie.director, movie.writer, movie.actors, movie.plot, movie.country, movie.awards);
+            description = content.format(movie.poster, movie.rated, movie.releasedDate.toDateString().substring(4), movie.runtimeInMinutes + ' minutes', movie.genre, movie.director, movie.writer, movie.actors, movie.plot, movie.country, movie.awards);
             if (movie.needsReview) {
                 description += "<p><strong>Some information of this movie doesn't seem to match the <a href=\"{0}\">entry</a> in the movie calendar.</strong>".format(movie.firstShowingUrl);
             } else {
