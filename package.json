@@ -18,6 +18,7 @@
     "xpath": "0.0.9"
   },
   "scripts": {
+    "postinstall": "bower install",
     "start": "node server.js"
   }
 }

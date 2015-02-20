@@ -1,0 +1,95 @@
+<div class="modal-header">
+  <button type="button" class="close" data-dismiss="modal" aria-label="Close" ng-click="closeMovieDetailsModal()"><span aria-hidden="true">&times;</span></button>
+  <h3 class="modal-title" id="movieDetailsLabel">
+    {{ movie.title }}
+    <a href="{{ movie.webSite }}" target="_blank" title="Open movie's Web site in new tab">
+      <span class="hor-space small glyphicon glyphicon-globe"></span>
+    </a>
+  </h3>
+</div>
+<div class="modal-body">
+  <div class="row">
+    <div class="col-xs-2"><a href="{{ movie.poster.replace('_SX300', '') }}" target="_blank"><img ng-src="{{ movie.poster }}" class="img-responsive"></a></div>
+    <div class="col-xs-10">{{ movie.plot }}</div>
+  </div>
+  <div class="separator"></div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Genre:</strong></div>
+    <div class="col-xs-9">{{ movie.genre || 'N/A' }}</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Cast:</strong></div>
+    <div class="col-xs-9">{{ movie.actors || 'N/A' }}</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Written By:</strong></div>
+    <div class="col-xs-9">{{ movie.writer || 'N/A' }}</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Directed By:</strong></div>
+    <div class="col-xs-9">{{ movie.director || 'N/A' }}</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Runtime:</strong></div>
+    <div class="col-xs-9">{{ movie.runtimeInMinutes }} minutes</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Awards:</strong></div>
+    <div class="col-xs-9">{{ movie.awards || 'N/A' }}</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Language:</strong></div>
+    <div class="col-xs-9">{{ movie.language || 'N/A' }}</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Country:</strong></div>
+    <div class="col-xs-9">{{ movie.country || 'N/A' }}</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Rated:</strong></div>
+    <div class="col-xs-9">{{ movie.rated || 'N/A' }}</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>IMDb Rating:</strong></div>
+    <div class="col-xs-9">
+      <span ng-if="movie.imdbRating">{{ movie.imdbRating }} / 10 by {{ movie.imdbVotes.toLocaleString() }} users</span>
+      <span ng-if="!movie.imdbRating">N/A</span>
+      <a class="hor-space" href="http://www.imdb.com/title/{{ movie.imdbId }}/" target="_blank" title="Open IMDb page in new tab">
+        <span class="glyphicon glyphicon-globe"></span>
+      </a>
+      <span ng-click="showMovieImdbId = !showMovieImdbId" class="hor-space hand glyphicon glyphicon-info-sign" title="Show IMDb ID"></span>
+      <span ng-if="showMovieImdbId" class="hor-space">{{ movie.imdbId }}</span>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>RT Rating:</strong></div>
+    <div ng-if="movie.tomatoRating" class="col-xs-9">
+      {{ movie.tomatoMeter }}% of {{ movie.tomatoReviews.toLocaleString() }} Rotten Tomatoes critics gave it a positive review 
+      ({{ movie.tomatoFresh }} fresh, {{ movie.tomatoRotten }} rotten) with an average rating of {{ movie.tomatoRating }} / 10
+    </div>
+    <div ng-if="!movie.tomatoRating" class="col-xs-9">N/A</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>RT User Rating:</strong></div>
+    <div ng-if="movie.tomatoRating" class="col-xs-9">
+      {{ movie.tomatoUserMeter }}% of {{ movie.tomatoUserReviews.toLocaleString() }} Rotten Tomatoes users liked it and gave it an average rating of {{ movie.tomatoUserRating }} / 5
+    </div>
+    <div ng-if="!movie.tomatoRating" class="col-xs-9">N/A</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Metascore:</strong></div>
+    <div class="col-xs-9">{{ movie.metascore || 'N/A' }}</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Released:</strong></div>
+    <div class="col-xs-9">{{ movie.releasedDate | date : 'fullDate' : 'UTC' }}</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Released (DVD):</strong></div>
+    <div class="col-xs-9">{{ (movie.releasedToDvdDate | date : 'fullDate' : 'UTC') || 'N/A' }}</div>
+  </div>
+  <div class="row">
+    <div class="col-xs-3"><strong>Producer:</strong></div>
+    <div class="col-xs-9">{{ movie.producer || 'N/A' }}</div>
+  </div>
+</div>

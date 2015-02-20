@@ -34,6 +34,8 @@ app.use(function(req, res, next) {
     }
 });
 
+app.use('/ui', express.static(__dirname + '/ui'));
+
 var blushProcessor = require('./processors/blush');
 app.get('/processors/blush', blushProcessor.execute);
 var blushFeed = require('./feeds/blush');

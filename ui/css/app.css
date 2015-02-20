@@ -1,0 +1,23 @@
+body {
+  padding-top: 15px;
+}
+
+.moviesGrid {
+  width: 890px;
+}
+
+.hand { 
+  cursor: pointer;
+}
+
+.separator {
+  padding: 5px;
+}
+
+.hor-space {
+  padding-left: 10px;
+}
+
+a.hor-space {
+  text-decoration: none;
+}
