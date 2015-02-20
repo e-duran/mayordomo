@@ -27,14 +27,18 @@ app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
-    if ('OPTIONS' == req.method) {
+    if ('OPTIONS' === req.method) {
         res.send(200);
     } else {
         next();
     }
 });
 
-app.use('/ui', express.static(__dirname + '/ui'));
+app.disable('strict routing');
+app.get('/ui', function (req, res) {
+    res.redirect('/ui/index.html');
+});
+app.use('/ui/', express.static(__dirname + '/ui'));
 
 var blushProcessor = require('./processors/blush');
 app.get('/processors/blush', blushProcessor.execute);
