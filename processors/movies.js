@@ -31,7 +31,7 @@ function requestMovieCalendar(request, startDate, endDate) {
     return request(movieCalendar);
 }
 
-function getMovieDocument(Movie, movieInfo, firstShowingUrl) {
+var getMovieDocument = function (Movie, movieInfo, firstShowingUrl) {
     var none = 'N/A',
         noPoster = 'http://www.sourcecreative.net/wp-content/uploads/2013/11/values-are-not-a-poster.jpg',
         previousYear = new Date().getFullYear() - 1,
@@ -76,7 +76,7 @@ function getMovieDocument(Movie, movieInfo, firstShowingUrl) {
         movie.needsReview = true;
     }
     return movie;
-}
+};
 
 function processMovieRequests(res, Promise, movies, Movie, movieTitles, firstShowingUrls, movieRequestResults) {
     var findMoviePromises = movieRequestResults.map(function (movieRequestResult, index) {
@@ -139,7 +139,6 @@ function saveMovies(res, Promise, movies, Movie, findMoviePromiseResults) {
 function processMovieCalendar(res, request, Promise, calendarResponse, calendarBody) {
     var xpath = require('xpath'),
         Dom = require('xmldom').DOMParser,
-        mongoose = require('mongoose'),
         Movie = require('../schemas/movie.js'),
         movieInfo = 'http://www.omdbapi.com/?t={0}&type=movie&plot=full&r=json',
         movies = [],
@@ -165,12 +164,6 @@ function processMovieCalendar(res, request, Promise, calendarResponse, calendarB
         res.end();
         return;
     }
-    mongoose.connect(global.config.mongoUrl);
-    mongoose.connection.on('error', function (connectionError) {
-        res.write('Connection error: ' + connectionError.message);
-        res.end();
-        return;
-    });
     movieTitles = nodes.map(function (titleNode) {
         return titleNode.nodeValue;
     });
@@ -207,7 +200,6 @@ function processMovieCalendar(res, request, Promise, calendarResponse, calendarB
                 }
             }
         });
-        mongoose.connection.close();
         res.write("Finished processing movie calendar\r\n");
         res.end();
     });
@@ -224,3 +216,4 @@ exports.execute = function (req, res) {
         res.end();
     });
 };
+exports.getMovieDocument = getMovieDocument;

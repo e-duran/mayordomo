@@ -1,8 +1,7 @@
 "use strict";
 
 exports.generate = function (req, res) {
-    var mongoose = require('mongoose'),
-        Dancer = require('../schemas/dancer.js'),
+    var Dancer = require('../schemas/dancer.js'),
         Rss = require('rss'),
         feed;
     res.type('xml');
@@ -14,12 +13,6 @@ exports.generate = function (req, res) {
         image_url: 'http://www.blushexotic.com/files/2014/12/favico_blush_noborder_logo1.png',
         language: 'en',
         pubDate: new Date()
-    });
-
-    mongoose.connect(global.config.mongoUrl);
-    mongoose.connection.on('error', function (connectionError) {
-        res.status(500).send('Connection error: ' + connectionError.message);
-        return;
     });
     Dancer.find().limit(20).sort('-createdAt').exec().then(function (dancers) {
         var i;
@@ -33,7 +26,6 @@ exports.generate = function (req, res) {
                 date: dancers[i].createdAt
             });
         }
-        mongoose.connection.close();
         res.send(feed.xml({indent: true}));
     });
 };

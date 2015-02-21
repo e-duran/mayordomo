@@ -1,16 +1,9 @@
 "use strict";
 exports.execute = function (req, res) {
-    var mongoose = require('mongoose'),
-        Movie = require('../schemas/movie.js'),
+    var Movie = require('../schemas/movie.js'),
         id = req.params.id,
         message;
     res.type('text');
-    mongoose.connect(global.config.mongoUrl);
-    mongoose.connection.on('error', function (connectionError) {
-        res.write('Connection error: ' + connectionError.message);
-        res.end();
-        return;
-    });
     Movie.update({ _id: id }, { isInteresting: true }, function (error, numberAffected) {
         if (error) {
             message = 'Error while updating movie {0}: {1}'.format(id, error);
@@ -19,7 +12,6 @@ exports.execute = function (req, res) {
         } else {
             message = 'Movie {0} was marked as interesting.'.format(id);
         }
-        mongoose.connection.close();
         res.send(message);
     });
 };

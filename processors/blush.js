@@ -35,7 +35,6 @@ exports.execute = function (req, res) {
     res.type('text');
     request('http://www.blushexotic.com/girls/feature-dancers/', function (requestError, response, body) {
         var Promise = require("bluebird"),
-            mongoose = require('mongoose'),
             Dancer = require('../schemas/dancer.js'),
             xpath = require('xpath'),
             Dom = require('xmldom').DOMParser,
@@ -125,10 +124,6 @@ exports.execute = function (req, res) {
                 dancers[i - 1] = new Dancer({ name: name, dates: dates, url: url, photoUrl: photoUrl, fullResolutionPhotoUrl: fullResolutionPhotoUrl, startDate: startDate, endDate: endDate });
             }
             res.write("Finished parsing dancers content\r\n");
-            mongoose.connect(global.config.mongoUrl);
-            mongoose.connection.on('error', function (connectionError) {
-                error(res, 'Connection error: ' + connectionError.message);
-            });
             findDancerPromises = dancers.map(function (dancer) {
                 return Dancer.findOne({ name: dancer.name, dates: dancer.dates }).exec();
             });
@@ -150,7 +145,6 @@ exports.execute = function (req, res) {
                         }
                     }
                 });
-                mongoose.connection.close();
                 res.write("Finished saving dancers event information.\r\n");
                 res.end();
             });

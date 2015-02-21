@@ -64,14 +64,8 @@ function processMovieInfoRequests(res, Promise, movies, movieInfoRequestResults)
 exports.execute = function (req, res) {
     var Promise = require("bluebird"),
         request = Promise.promisify(require('request')),
-        mongoose = require('mongoose'),
         Movie = require('../schemas/movie.js');
     res.type('text');
-    mongoose.connect(global.config.mongoUrl);
-    mongoose.connection.on('error', function (connectionError) {
-        res.status(500).send('Connection error: ' + connectionError.message);
-        return;
-    });
     Movie.find({ needsReview: false, postProcessingCompleted: false}).exec().then(function (movies) {
         var movieInfoRequests = movies.map(function (movie) {
             return request('http://www.omdbapi.com/?i={0}&plot=full&r=json&tomatoes=true'.format(movie.imdbId));
@@ -108,7 +102,6 @@ exports.execute = function (req, res) {
                 }
                 res.write('Saved latest information but post-procesing is not complete for movie "{0}"\r\n'.format(movie.title));
             });
-            mongoose.connection.close();
             res.end();
         });
     });

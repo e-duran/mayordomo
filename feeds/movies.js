@@ -1,8 +1,7 @@
 "use strict";
 
 exports.generate = function (req, res) {
-    var mongoose = require('mongoose'),
-        Movie = require('../schemas/movie.js'),
+    var Movie = require('../schemas/movie.js'),
         Rss = require('rss'),
         today = new Date(),
         markAsInterestingUrl = '{0}/processors/markAsInteresting/{1}',
@@ -22,12 +21,6 @@ exports.generate = function (req, res) {
         image_url: 'http://icons.iconarchive.com/icons/fatcow/farm-fresh/32/movies-icon.png',
         language: 'en',
         pubDate: today
-    });
-
-    mongoose.connect(global.config.mongoUrl);
-    mongoose.connection.on('error', function (connectionError) {
-        res.status(500).send('Connection error: ' + connectionError.message);
-        return;
     });
     attributes = ['Rated', 'Released', 'Runtime', 'Genre', 'Director', 'Writer', 'Actors', 'Plot', 'Country', 'Awards'];
     content = '<p><img src="{0}"></p>';
@@ -53,7 +46,6 @@ exports.generate = function (req, res) {
                 date: movie.createdAt
             });
         }
-        mongoose.connection.close();
         res.send(feed.xml({indent: true}));
     });
 };
