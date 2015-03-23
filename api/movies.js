@@ -69,6 +69,7 @@ exports.register = function (app) {
     });
 
     app.put(basePath + '/:id', function (req, res) {
+        delete req.body._id;
         req.body.modifiedAt = new Date();
         Movie.findByIdAndUpdate(req.params.id, { $set: req.body }, function (error, movie) {
             if (error) {
