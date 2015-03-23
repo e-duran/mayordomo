@@ -1,5 +1,0 @@
-#!/bin/bash
-
-/var/lib/openshift/54d526c4fcf933426b000216/app-root/data/bin/curl -o /var/lib/openshift/54d526c4fcf933426b000216/app-root/logs/blush.log "https://$OPENSHIFT_APP_DNS/processors/blush"
-/var/lib/openshift/54d526c4fcf933426b000216/app-root/data/bin/curl -o /var/lib/openshift/54d526c4fcf933426b000216/app-root/logs/movies.log "https://$OPENSHIFT_APP_DNS/processors/movies"
-/var/lib/openshift/54d526c4fcf933426b000216/app-root/data/bin/curl -o /var/lib/openshift/54d526c4fcf933426b000216/app-root/logs/moviesOnDvd.log "https://$OPENSHIFT_APP_DNS/processors/moviesOnDvd"
