@@ -145,13 +145,13 @@ function processInsiderMovieRequests(res, movieTitles, insiderMoviesUrls, movieR
             }
             releaseScopeEndIndex = movieResponseBody.indexOf('&nbsp;', releaseScopeStartIndex + nationwideReleaseScopeTag.length);
             releaseScope = movieResponseBody.substring(releaseScopeStartIndex + nationwideReleaseScopeTag.length, releaseScopeEndIndex);
-            if (releaseScope !== 'Nationwide' || releaseScope !== 'Limited') {
-                errorMessage = 'Stopping processing of movie "{0}" since it was not released nationwide per {1}\r\n'.format(movieTitles[index], insiderMoviesUrls[index]);
-                res.write(errorMessage);
-                return null;
+            if (releaseScope === 'Nationwide' || releaseScope === 'Limited') {
+                imdbIdStartIndex = imdbUrlStartIndex + imdbIdUrl.length - 2;
+                return movieResponseBody.substring(imdbIdStartIndex, movieResponseBody.indexOf('/', imdbIdStartIndex));
             }
-            imdbIdStartIndex = imdbUrlStartIndex + imdbIdUrl.length - 2;
-            return movieResponseBody.substring(imdbIdStartIndex, movieResponseBody.indexOf('/', imdbIdStartIndex));
+            errorMessage = 'Will not process movie "{0}" due to its release scope per {1}\r\n'.format(movieTitles[index], insiderMoviesUrls[index]);
+            res.write(errorMessage);
+            return null;
         }
         errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got: {1}\r\n'.format(movieTitles[index], movieRequestResult.reason());
         res.write(errorMessage);
