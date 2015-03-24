@@ -1,1 +1,1 @@
-php "$OPENSHIFT_DATA_DIR/mayordomo.sh"
+php "$OPENSHIFT_DATA_DIR/mayordomo.php"
