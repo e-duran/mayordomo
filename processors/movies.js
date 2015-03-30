@@ -40,7 +40,7 @@ var getMovieDocument = function (Movie, movieInfo) {
     if (!movie.releasedDate.isValid()) {
         movie.releasedDate = null;
     }
-    if (movie.year === null || movie.releasedDate === null || movie.runtime === null || movie.year < previousYear || movie.imdbId.substring(0, 2).toLowerCase() !== 'tt') {
+    if (movie.year === null || movie.releasedDate === null || movie.runtimeInMinutes === null || movie.year < previousYear || movie.imdbId.substring(0, 2).toLowerCase() !== 'tt') {
         movie.needsReview = true;
     }
     return movie;
