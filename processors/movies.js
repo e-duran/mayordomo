@@ -116,11 +116,7 @@ function processInsiderMovieRequests(res, movieTitles, insiderMoviesUrls, movieR
             movieResponseBody,
             imdbIdUrl = 'http://www.imdb.com/title/tt',
             imdbUrlStartIndex,
-            imdbIdStartIndex,
-            nationwideReleaseScopeTag = '&nbsp;&nbsp;&nbsp;<span>',
-            releaseScopeStartIndex,
-            releaseScopeEndIndex,
-            releaseScope;
+            imdbIdStartIndex;
 
         if (movieRequestResult.isFulfilled()) {
             resultValue = movieRequestResult.value();
@@ -137,21 +133,8 @@ function processInsiderMovieRequests(res, movieTitles, insiderMoviesUrls, movieR
                 res.write(errorMessage);
                 return null;
             }
-            releaseScopeStartIndex = movieResponseBody.indexOf(nationwideReleaseScopeTag);
-            if (releaseScopeStartIndex < 0) {
-                errorMessage = 'Cannot find info about scope of release for "{0}" in content of Movie Insider Web page {1}\r\n'.format(movieTitles[index], insiderMoviesUrls[index]);
-                res.write(errorMessage);
-                return null;
-            }
-            releaseScopeEndIndex = movieResponseBody.indexOf('&nbsp;', releaseScopeStartIndex + nationwideReleaseScopeTag.length);
-            releaseScope = movieResponseBody.substring(releaseScopeStartIndex + nationwideReleaseScopeTag.length, releaseScopeEndIndex);
-            if (releaseScope === 'Nationwide' || releaseScope === 'Limited') {
-                imdbIdStartIndex = imdbUrlStartIndex + imdbIdUrl.length - 2;
-                return movieResponseBody.substring(imdbIdStartIndex, movieResponseBody.indexOf('/', imdbIdStartIndex));
-            }
-            errorMessage = 'Will not process movie "{0}" due to its release scope per {1}\r\n'.format(movieTitles[index], insiderMoviesUrls[index]);
-            res.write(errorMessage);
-            return null;
+            imdbIdStartIndex = imdbUrlStartIndex + imdbIdUrl.length - 2;
+            return movieResponseBody.substring(imdbIdStartIndex, movieResponseBody.indexOf('/', imdbIdStartIndex));
         }
         errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got: {1}\r\n'.format(movieTitles[index], movieRequestResult.reason());
         res.write(errorMessage);
@@ -161,19 +144,14 @@ function processInsiderMovieRequests(res, movieTitles, insiderMoviesUrls, movieR
 }
 
 function processMovieCalendar(res, request, Promise, calendarResponse, calendarBody) {
-    var xpath = require('xpath'),
-        Dom = require('xmldom').DOMParser,
-        Movie = require('../schemas/movie.js'),
+    var Movie = require('../schemas/movie.js'),
+        cheerio = require('cheerio'),
         movieInfo = 'http://www.omdbapi.com/?i={0}&plot=full&r=json',
         movies = [],
-        moviesStartIndex,
-        moviesEndIndex,
-        moviesContent,
-        doc,
-        nodes,
-        movieTitles,
-        insiderMoviesUrls,
-        insiderMoviesRequests;
+        movieTitles = [],
+        insiderMoviesUrls = [],
+        insiderMoviesRequests,
+        $;
 
     if (calendarResponse.statusCode !== 200) {
         res.write("Cannot retrieve movies via GET request, got status code: " + calendarResponse.statusCode);
@@ -181,34 +159,12 @@ function processMovieCalendar(res, request, Promise, calendarResponse, calendarB
         return;
     }
     res.write("Retrieved movies via GET request\r\n");
-    moviesStartIndex = calendarBody.indexOf('<div style="clear:both;">');
-    if (moviesStartIndex < 0) {
-        res.write('Cannot find start of movies information');
-        res.end();
-        return;
-    }
-    moviesEndIndex = calendarBody.indexOf('</ul><br /><ul class="selectsub">', moviesStartIndex);
-    if (moviesEndIndex < moviesStartIndex) {
-        res.write('Cannot find end of movies information');
-        res.end();
-        return;
-    }
-    moviesContent = '<?xml version="1.0" encoding="windows-1252"?><movies>';
-    moviesContent += calendarBody.substring(moviesStartIndex, moviesEndIndex);
-    moviesContent += '</movies>';
-    doc = new Dom().parseFromString(moviesContent);
-    nodes = xpath.select("/movies/div/h3/a", doc);
-    if (!nodes || nodes.length === 0) {
-        res.write("Cannot find movie entries in movies coming out this week schedule");
-        res.end();
-        return;
-    }
-    insiderMoviesUrls = nodes.map(function (node) {
-        return node.attributes[0].value; // href attribute
+    $ = cheerio.load(calendarBody);
+    $("h4.media-heading > a").each(function (i, anchor) {
+        insiderMoviesUrls[i] = $(anchor).attr("href");
+        movieTitles[i] = $(anchor).text().trim();
     });
-    movieTitles = nodes.map(function (node) {
-        return node.firstChild.nodeValue; // text value of the node
-    });
+
     insiderMoviesRequests = insiderMoviesUrls.map(function (url) {
         return request(url);
     });
