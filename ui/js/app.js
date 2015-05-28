@@ -11,9 +11,7 @@ var mayordomoApp = angular.module('mayordomoApp', [
   'ngRoute',
   'ui.grid', 'ui.grid.edit', 'ui.grid.rowEdit', 'ui.grid.cellNav', 'ui.grid.resizeColumns', 'ui.grid.pinning', 'ui.grid.moveColumns', 'ui.grid.pagination',
   'ui.bootstrap',
-  //'phonecatAnimations',
   'mayordomoControllers',
-  //'phonecatFilters',
   'mayordomoServices'
 ]);
 

@@ -2,6 +2,29 @@
 
 var mayordomoControllers = angular.module('mayordomoControllers', []);
 
+function convertRating (rating) {
+  switch (rating) {
+    case 'thumbs-down':
+      return 0;
+    case 'hand-left':
+      return 10;
+    case 'thumbs-up':
+      return 20;
+    case 'star':
+      return 30;
+    default:
+      return -1;
+  }
+}
+
+var ratingSortFuntion = function (a, b) {
+  a = convertRating(a);
+  b = convertRating(b);
+  if (a == b) return 0;
+  if (a < b) return -1;
+  return 1;
+};
+
 mayordomoControllers.controller('MovieListCtrl', ['$scope', 'Movie', 'uiGridConstants', '$modal',
   function ($scope, Movie, uiGridConstants, $modal) {
     var gridRowsToDisplay = 15; // In order to keep grid's auto-height and grid's page size in sync
@@ -31,16 +54,16 @@ mayordomoControllers.controller('MovieListCtrl', ['$scope', 'Movie', 'uiGridCons
     };
 
     $scope.gridOptions.columnDefs = [
-      { name: 'id', field: '_id', displayName: ' ', width: 24, enableFiltering: false, cellTemplate: '<div class="ui-grid-cell-contents"><span ng-click="grid.appScope.showMovieDetail(grid.getCellValue(row, col))" class="hand glyphicon glyphicon-film" aria-hidden="true" title="View details"></span></div>' },
+      { name: 'id', field: '_id', displayName: ' ', width: 24, enableSorting: false, enableColumnMenu: false, enableFiltering: false, cellTemplate: '<div class="ui-grid-cell-contents"><span ng-click="grid.appScope.showMovieDetail(grid.getCellValue(row, col))" class="hand glyphicon glyphicon-film" aria-hidden="true" title="View details"></span></div>' },
       { name: 'title', field: 'title', width: 200 },
-      { name: 'imdbId', field: 'imdbId', displayName: 'IMDb ID', width: 95, cellTemplate: '<div class="ui-grid-cell-contents">{{ COL_FIELD }} <a href="http://www.imdb.com/title/{{ COL_FIELD }}/" target="_blank" title="View IMDb page"><span class="glyphicon glyphicon-new-window"></span></a></div>' },
+      { name: 'imdbId', field: 'imdbId', displayName: 'IMDb ID', width: 100, cellTemplate: '<div class="ui-grid-cell-contents">{{ COL_FIELD }} <a href="http://www.imdb.com/title/{{ COL_FIELD }}/" target="_blank" title="View IMDb page"><span class="glyphicon glyphicon-new-window"></span></a></div>' },
       { name: 'rating', field: 'rating', visible: false },
-      { name: 'ratingIcon', field: 'ratingIcon', displayName: 'Rating', width: 75, cellTemplate: '<div class="ui-grid-cell-contents text-center"><span class="glyphicon glyphicon-{{grid.getCellValue(row, grid.getColumn(\'ratingIcon\'))}}" title="{{grid.getCellValue(row, grid.getColumn(\'rating\'))}}"></span></div>' },
-      { name: 'releasedDate', field: 'releasedDate', displayName: 'Released', width: 100, type: 'Date', cellFilter: "date : 'MMM d' : 'UTC'", filter: { placeholder: 'yyyy-mm' }, cellClass: 'text-center' },
-      { name: 'releasedToDvdDate', field: 'releasedToDvdDate', displayName: 'On DVD', width: 90, type: 'Date', cellFilter: "date : 'MMM d' : 'UTC'", filter: { placeholder: 'yyyy-mm' }, cellClass: 'text-center' },
-      { name: 'isInteresting', field: 'isInteresting', displayName: 'Interesting', width: 110, enableCellEdit: true, type: 'boolean', cellClass: 'text-center' },
-      { name: 'acquired', field: 'acquired', width: 100, enableCellEdit: true, type: 'boolean', cellClass: 'text-center' },
-      { name: 'seen', field: 'seen', width: 90, enableCellEdit: true, type: 'boolean', cellClass: 'text-center' }
+      { name: 'ratingIcon', field: 'ratingIcon', displayName: 'Rating', width: 90, sortingAlgorithm: ratingSortFuntion, cellTemplate: '<div class="ui-grid-cell-contents text-center"><span class="glyphicon glyphicon-{{grid.getCellValue(row, grid.getColumn(\'ratingIcon\'))}}" title="{{grid.getCellValue(row, grid.getColumn(\'rating\'))}}"></span></div>' },
+      { name: 'releasedDate', field: 'releasedDate', displayName: 'Released', width: 110, cellFilter: "date : 'MMM d' : 'UTC'", filter: { placeholder: 'yyyy-mm' }, cellClass: 'text-center' },
+      { name: 'releasedToDvdDate', field: 'releasedToDvdDate', displayName: 'On DVD', width: 100, cellFilter: "date : 'MMM d' : 'UTC'", filter: { placeholder: 'yyyy-mm' }, cellClass: 'text-center' },
+      { name: 'isInteresting', field: 'isInteresting', displayName: 'Interesting', width: 120, enableCellEdit: true, type: 'boolean', cellClass: 'text-center' },
+      { name: 'acquired', field: 'acquired', width: 110, enableCellEdit: true, type: 'boolean', cellClass: 'text-center' },
+      { name: 'seen', field: 'seen', width: 105, enableCellEdit: true, type: 'boolean', cellClass: 'text-center' }
     ];
 
     $scope.gridOptions.onRegisterApi = function (gridApi) {
