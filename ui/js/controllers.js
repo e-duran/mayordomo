@@ -27,7 +27,7 @@ var ratingSortFuntion = function (a, b) {
 
 mayordomoControllers.controller('MovieListCtrl', ['$scope', 'Movie', 'uiGridConstants', '$modal',
   function ($scope, Movie, uiGridConstants, $modal) {
-    var gridRowsToDisplay = 15; // In order to keep grid's auto-height and grid's page size in sync
+    var gridRowsToDisplay = 10; // In order to keep grid's auto-height and grid's page size in sync
     $scope.gridOptions = {
       data: 'movies',
       enableColumnResizing: true,
@@ -38,7 +38,7 @@ mayordomoControllers.controller('MovieListCtrl', ['$scope', 'Movie', 'uiGridCons
       showGridFooter: false,
       showColumnFooter: false,
       rowEditWaitInterval: 3000,
-      minRowsToShow: gridRowsToDisplay,
+      minRowsToShow: gridRowsToDisplay + 1,
       paginationPageSizes: [ gridRowsToDisplay ],
       paginationPageSize: gridRowsToDisplay,
       enablePaginationControls: true,
