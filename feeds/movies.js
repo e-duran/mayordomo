@@ -28,7 +28,7 @@ exports.generate = function (req, res) {
     for (i = 0; i < attributes.length; i++) {
         content += '<strong>{0}</strong>: {1}<br/>'.format(attributes[i], '{' + (i + attributesOffset) + '}');
     }
-    Movie.find().limit(20).sort('-createdAt').exec().then(function (movies) {
+    Movie.find().limit(20).sort('-modifiedAt').exec().then(function (movies) {
         for (i = 0; i < movies.length; i++) {
             movie = movies[i];
             description = content.format(movie.poster, movie.rated, movie.releasedDate.toDateString().substring(4), 
@@ -45,7 +45,7 @@ exports.generate = function (req, res) {
                 url: 'http://www.imdb.com/title/' + movie.imdbId,
                 guid: movie.id,
                 author: 'Mayordomo',
-                date: movie.createdAt
+                date: movie.modifiedAt
             });
         }
         res.send(feed.xml({indent: true}));
