@@ -1,4 +1,4 @@
-+"use strict";
+"use strict";
 
 var getMovieDocument = function (Movie, movieInfo) {
     var none = 'N/A',
