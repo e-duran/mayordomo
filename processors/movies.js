@@ -1,4 +1,4 @@
-"use strict";
++"use strict";
 
 var getMovieDocument = function (Movie, movieInfo) {
     var none = 'N/A',
@@ -180,11 +180,13 @@ function processMovieCalendar(res, request, Promise, calendarResponse, calendarB
     }).settle().then(function (createMoviePromisesResults) {
         createMoviePromisesResults.map(function (createMoviePromisesResult, index) {
             var resultValue,
-                rejectionReason;
+                rejectionReason,
+                needsReview;
             if (createMoviePromisesResult.isFulfilled()) {
                 resultValue = createMoviePromisesResult.value();
                 if (resultValue.movieExists === undefined) {
-                    res.write('Movie "{0}" created\r\n'.format(movies[index].title));
+                    needsReview = movies[index].needsReview ? ' but its info needs to be reviewed' : '';
+                    res.write('Movie "{0}" created{1}\r\n'.format(movies[index].title, needsReview));
                 }
             } else {
                 rejectionReason = createMoviePromisesResult.reason();
