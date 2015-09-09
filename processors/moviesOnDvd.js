@@ -41,7 +41,7 @@ function processMovieInfoRequests(res, Promise, movies, movieInfoRequestResults)
             movieResponse = resultValue[0];
             movieResponseBody = resultValue[1];
             if (movieResponse.statusCode !== 200) {
-                errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got status code: {0}\r\n'.format(movie.title, movieResponse.statusCode);
+                errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got status code: {1}\r\n'.format(movie.title, movieResponse.statusCode);
                 res.write(errorMessage);
                 return Promise.reject(errorMessage);
             }
