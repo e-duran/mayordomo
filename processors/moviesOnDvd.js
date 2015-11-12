@@ -62,14 +62,19 @@ function processMovieInfoRequests(res, Promise, movies, movieInfoRequestResults)
 }
 
 exports.execute = function (req, res) {
-    var Promise = require("bluebird"),
+    var Promise = require('bluebird'),
         request = Promise.promisify(require('request')),
         Movie = require('../schemas/movie.js'),
-        cutoff = new Date(Date.now() - 1000 * 60 * 60 * 24 * 180);
+        cutoff = new Date(Date.now() - 1000 * 60 * 60 * 24 * 180),
+        sleep = require('sleep'),
+        movieQuery;
     res.type('text');
-    Movie.find({ needsReview: false, postProcessingCompleted: false, createdAt: { $gt: cutoff } }).exec().then(function (movies) {
+    movieQuery = req.query.updateRatings ? Movie.find() : Movie.find({ needsReview: false, postProcessingCompleted: false, createdAt: { $gt: cutoff } });
+    movieQuery.exec().then(function (movies) {
         res.write('Movies to be post-processed: {0}\r\n'.format(movies.length));
         var movieInfoRequests = movies.map(function (movie) {
+            if (req.query.updateRatings)
+                sleep.sleep(2);
             return request('http://www.omdbapi.com/?i={0}&plot=full&r=json&tomatoes=true'.format(movie.imdbId));
         });
         Promise.settle(movieInfoRequests).then(function (movieInfoRequestResults) {
