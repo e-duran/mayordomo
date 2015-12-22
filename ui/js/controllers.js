@@ -79,7 +79,7 @@ mayordomoControllers.controller('MovieListCtrl', ['$scope', 'Movie', 'uiGridCons
       movies.forEach(function (movie) {
         var rating = '';
         var ratingIcon = 'hand-left';
-        if (movie.imdbRating) {
+        if (movie.imdbRating && movie.imdbVotes) {
           rating = 'Metascore: {0}\r\n'.format(movie.metascore || 'N/A');
           rating += 'IMDb: {0} / 10 by {1} users\r\n'.format(movie.imdbRating, movie.imdbVotes.toLocaleString());
         }
