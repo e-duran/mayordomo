@@ -41,6 +41,7 @@ app.get('/ui', function (req, res) {
     res.redirect('/ui/index.html');
 });
 app.use('/ui/', express.static(__dirname + '/ui'));
+app.use(express.favicon("favicon.ico"));
 
 var mongoose = require('mongoose');
 mongoose.connect(config.mongoUrl);
