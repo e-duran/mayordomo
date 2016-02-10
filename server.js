@@ -17,9 +17,16 @@ var env = process.env.NODE_ENV || "c9";
 var config = require(__dirname + '/config/' + env + '.js');
 global.config = config;
 
+var mongoose = require('mongoose');
+mongoose.connect(config.mongoUrl);
+mongoose.connection.on('error', function (connectionError) {
+    console.log('Mongoose Connection ' + connectionError);
+});
+
 var express = require('express');
 var app = express();
 
+app.use(app.router);
 app.use(express.logger());
 app.use(express.bodyParser());
 app.use(express.methodOverride());
@@ -43,12 +50,6 @@ app.get('/ui', function (req, res) {
 app.use('/ui/', express.static(__dirname + '/ui'));
 app.use(express.favicon("favicon.ico"));
 
-var mongoose = require('mongoose');
-mongoose.connect(config.mongoUrl);
-mongoose.connection.on('error', function (connectionError) {
-    console.log('Mongoose Connection ' + connectionError);
-});
-
 var blushProcessor = require('./processors/blush');
 app.get('/processors/blush', blushProcessor.execute);
 var blushFeed = require('./feeds/blush');
@@ -65,6 +66,12 @@ app.get('/processors/moviesOnDvd', moviesOnDvdProcessor.execute);
 
 var movieApi = require('./api/movies');
 movieApi.register(app);
+
+app.use(function(err, req, res, next) {
+    if(!err) return next();
+    console.log('Unhandled exception: ' + err);
+    return next(err);
+});
 
 app.listen(config.port, config.host);
 console.log('Express server for Mayordomo started on port %s', config.port);

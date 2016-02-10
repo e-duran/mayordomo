@@ -37,7 +37,7 @@ var getMovieDocument = function (Movie, movieInfo) {
     if (isNaN(movie.year)) {
         movie.year = null;
     }
-    if (!movie.releasedDate.isValid()) {
+    if (movie.releasedDate && !movie.releasedDate.isValid()) {
         movie.releasedDate = null;
     }
     if (movie.year === null || movie.releasedDate === null || movie.runtimeInMinutes === null || movie.year < previousYear || movie.imdbId.substring(0, 2).toLowerCase() !== 'tt') {
@@ -96,6 +96,7 @@ function saveMovies(res, Promise, movies, Movie, findMoviePromiseResults) {
                 res.write(errorMessage);
                 return Promise.resolve({ movieExists: true });
             }
+            res.write('Movie "{0}" saved\r\n'.format(movie.title));
             return Movie.create(movie);
         }
         rejectionReason = findMovieResult.reason();
@@ -197,6 +198,9 @@ function processMovieCalendar(res, request, Promise, calendarResponse, calendarB
             res.write("Finished processing movie calendar\r\n");
             res.end();
         });
+    }).catch(function (error) {
+        res.write("Unhandled " + error);
+        res.end();
     });
 }
 
