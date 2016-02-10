@@ -25,8 +25,6 @@ mongoose.connection.on('error', function (connectionError) {
 
 var express = require('express');
 var app = express();
-
-app.use(app.router);
 app.use(express.logger());
 app.use(express.bodyParser());
 app.use(express.methodOverride());
