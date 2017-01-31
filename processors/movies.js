@@ -2,7 +2,6 @@
 
 var getMovieDocument = function (Movie, movieInfo) {
     var none = 'N/A',
-        noPoster = 'http://www.sourcecreative.net/wp-content/uploads/2013/11/values-are-not-a-poster.jpg',
         previousYear = new Date().getFullYear() - 1,
         movie,
         runtimeInMinutes,
@@ -31,7 +30,7 @@ var getMovieDocument = function (Movie, movieInfo) {
         language: movieInfo.Language,
         country: movieInfo.Country,
         awards: movieInfo.Awards,
-        poster: movieInfo.Poster === none ? noPoster : movieInfo.Poster,
+        poster: movieInfo.Poster === none ? '' : movieInfo.Poster,
         imdbId: movieInfo.imdbID
     });
     if (isNaN(movie.year)) {
@@ -40,7 +39,7 @@ var getMovieDocument = function (Movie, movieInfo) {
     if (movie.releasedDate && !movie.releasedDate.isValid()) {
         movie.releasedDate = null;
     }
-    if (movie.year === null || movie.releasedDate === null || movie.runtimeInMinutes === null || movie.year < previousYear || movie.imdbId.substring(0, 2).toLowerCase() !== 'tt') {
+    if (movie.year === null || movie.releasedDate === null || movie.runtimeInMinutes === null || movie.year < previousYear || movie.imdbId.substring(0, 2).toLowerCase() !== 'tt' || movie.poster === '') {
         movie.needsReview = true;
     }
     return movie;
