@@ -12,6 +12,31 @@ Date.prototype.isValid = function () {
     }
     return !isNaN(this.getTime());
 };
+if (!Array.prototype.find) {
+  Object.defineProperty(Array.prototype, 'find', {
+    value: function(predicate) {
+     'use strict';
+     if (this == null) {
+       throw new TypeError('Array.prototype.find called on null or undefined');
+     }
+     if (typeof predicate !== 'function') {
+       throw new TypeError('predicate must be a function');
+     }
+     var list = Object(this);
+     var length = list.length >>> 0;
+     var thisArg = arguments[1];
+     var value;
+
+     for (var i = 0; i < length; i++) {
+       value = list[i];
+       if (predicate.call(thisArg, value, i, list)) {
+         return value;
+       }
+     }
+     return undefined;
+    }
+  });
+}
 
 var env = process.env.NODE_ENV || "c9";
 var config = require(__dirname + '/config/' + env + '.js');
@@ -64,6 +89,9 @@ app.get('/processors/moviesOnDvd', moviesOnDvdProcessor.execute);
 
 var stockProcessor = require('./processors/stocks');
 app.get('/processors/stocks', stockProcessor.execute);
+
+var supercutsProcessor = require('./processors/supercuts');
+app.get('/processors/supercuts', supercutsProcessor.execute);
 
 var movieApi = require('./api/movies');
 movieApi.register(app);
