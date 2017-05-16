@@ -28,7 +28,8 @@ exports.generate = function (req, res) {
     for (i = 0; i < attributes.length; i++) {
         content += '<strong>{0}</strong>: {1}<br/>'.format(attributes[i], '{' + (i + attributesOffset) + '}');
     }
-    Movie.find().limit(20).sort('-modifiedAt').exec().then(function (movies) {
+    // Find the most recently created movies (don't use modified date because reviewed movies or movies changed via the UI would be included)
+    Movie.find().sort('-createdAt').limit(20).exec().then(function (movies) {
         for (i = 0; i < movies.length; i++) {
             movie = movies[i];
             description = content.format(movie.poster, movie.rated, movie.releasedDate.toDateString().substring(4), 
@@ -45,7 +46,7 @@ exports.generate = function (req, res) {
                 url: 'http://www.imdb.com/title/' + movie.imdbId,
                 guid: movie.id,
                 author: 'Mayordomo',
-                date: movie.modifiedAt
+                date: movie.modifiedAt // but use the modified date as the item/movie's publication date
             });
         }
         res.send(feed.xml({indent: true}));
