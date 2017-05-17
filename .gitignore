@@ -30,4 +30,4 @@ mongod
 
 # Cloud9 files
 .c9
-
+config/c9.js
