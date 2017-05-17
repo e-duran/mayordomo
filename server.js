@@ -62,6 +62,9 @@ app.get('/processors/markAsInteresting/:id', interestingMovieProcessor.execute);
 var moviesOnDvdProcessor = require('./processors/moviesOnDvd');
 app.get('/processors/moviesOnDvd', moviesOnDvdProcessor.execute);
 
+var stockProcessor = require('./processors/stocks');
+app.get('/processors/stocks', stockProcessor.execute);
+
 var movieApi = require('./api/movies');
 movieApi.register(app);
 
