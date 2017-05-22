@@ -44,7 +44,7 @@ exports.execute = function (req, res) {
             existingStylist.lastTime = lastTime;
             stylistModel = existingStylist;
         } else {
-            stylistModel = new Stylist({ stylistId: stylistId, lastTime: lastTime, createdAt: now.toDate() });
+            stylistModel = new Stylist({ stylistId: stylistId, stylistName: stylistName, lastTime: lastTime, createdAt: now.toDate() });
         }
         return Promise.promisify(stylistModel.save, stylistModel)();
     })
