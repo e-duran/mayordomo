@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 
 var StylistSchema = new mongoose.Schema({
         stylistId: Number,
-        stylistName: String,
+        name: String,
         lastTime: Date,
         createdAt: Date
     });
