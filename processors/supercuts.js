@@ -6,6 +6,7 @@ exports.execute = function (req, res) {
         moment = require('moment-timezone'),
         now = moment().tz('America/New_York'),
         stylistId = global.config.stylistId,
+        stylistName = global.config.stylistName,
         Stylist = require('../schemas/stylist.js'),
         today = moment(now).startOf('day'),
         tomorrow = moment(today).add(1, 'day'),
@@ -15,7 +16,7 @@ exports.execute = function (req, res) {
 
     res.type('text');
     if (now.hour() < 9 || now.hour() >= 21) {
-        res.write('Skipped processing due to out of business hours');
+        res.write('Skipped processing due to out of business hours\n');
         res.end();
         return;
     }
@@ -28,6 +29,7 @@ exports.execute = function (req, res) {
             return stylist.employeeID == stylistId;
         });
         if (stylistInfo) {
+            if (stylistInfo.name != stylistName) { res.write('Stylist {0} name is not {1}\n'.format(stylistId, stylistName)); }
             lastTime = moment(now).add(moment.duration(stylistInfo.availableTime.replace(' hrs ', ':').replace(' mins', '')).add(1, 'minute')).startOf('minute');
         }
         if (lastTime) {
@@ -57,7 +59,7 @@ exports.execute = function (req, res) {
         }
     })
     .finally(function () {
-        res.write('\nEnd of processing.');
+        res.write('\nEnd of processing.\n');
         res.end();
     });
 };
