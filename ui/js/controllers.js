@@ -56,7 +56,7 @@ mayordomoControllers.controller('MovieListCtrl', ['$scope', 'Movie', 'uiGridCons
     $scope.gridOptions.columnDefs = [
       { name: 'id', field: '_id', displayName: ' ', width: 24, enableSorting: false, enableColumnMenu: false, enableFiltering: false, cellTemplate: '<div class="ui-grid-cell-contents"><span ng-click="grid.appScope.showMovieDetail(grid.getCellValue(row, col))" class="hand glyphicon glyphicon-film" aria-hidden="true" title="View details"></span></div>' },
       { name: 'title', field: 'title', width: 200 },
-      { name: 'imdbId', field: 'imdbId', displayName: 'IMDb ID', width: 100, cellTemplate: '<div class="ui-grid-cell-contents">{{ COL_FIELD }} <a href="http://www.imdb.com/title/{{ COL_FIELD }}/" target="_blank" title="View IMDb page"><span class="glyphicon glyphicon-new-window"></span></a></div>' },
+      { name: 'imdbId', field: 'imdbId', displayName: 'IMDb ID', width: 100, cellTemplate: '<div class="ui-grid-cell-contents">{{ COL_FIELD }} <a ng-if="grid.getCellValue(row, col)" href="http://www.imdb.com/title/{{ COL_FIELD }}/" target="_blank" title="View IMDb page"><span class="glyphicon glyphicon-new-window"></span></a></div>' },
       { name: 'rating', field: 'rating', visible: false },
       { name: 'ratingIcon', field: 'ratingIcon', displayName: 'Rating', width: 90, sortingAlgorithm: ratingSortFuntion, cellTemplate: '<div class="ui-grid-cell-contents text-center"><span class="glyphicon glyphicon-{{grid.getCellValue(row, grid.getColumn(\'ratingIcon\'))}}" title="{{grid.getCellValue(row, grid.getColumn(\'rating\'))}}"></span></div>' },
       { name: 'releasedDate', field: 'releasedDate', displayName: 'Released', width: 110, cellFilter: "date : 'MMM d' : 'UTC'", filter: { placeholder: 'yyyy-mm' }, cellClass: 'text-center' },
@@ -100,6 +100,7 @@ mayordomoControllers.controller('MovieListCtrl', ['$scope', 'Movie', 'uiGridCons
         }
         movie.rating = rating || 'N/A';
         movie.ratingIcon = ratingIcon;
+        movie.webSite = movie.webSite === 'N/A' ? null : movie.webSite;
 
         $scope.keyedMovies[movie._id] = movie;
       });

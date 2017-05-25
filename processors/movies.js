@@ -17,9 +17,9 @@ var getMovieDocument = function (Movie, movieInfo) {
         }
     }
     movie = new Movie({
-        title: movieInfo.Title,
-        year: movieInfo.Year === none ? null : Number(movieInfo.Year),
-        rated: movieInfo.Rated,
+        title: movieInfo.title,
+        year: movieInfo.year === none ? null : Number(movieInfo.Year),
+        rated: movieInfo.rated.replace('Rated ', ''),
         releasedDate: movieInfo.Released === none ? null : new Date(movieInfo.Released),
         runtimeInMinutes: runtimeInMinutes,
         genre: movieInfo.Genre,
@@ -133,7 +133,7 @@ function processInsiderMovieRequests(res, movieTitles, insiderMoviesUrls, movieR
                 res.write(errorMessage);
                 return null;
             }
-            imdbIdStartIndex = imdbUrlStartIndex + imdbIdUrl.length - 2;
+            imdbIdStartIndex = imdbUrlStartIndex + imdbIdUrl.length;
             return movieResponseBody.substring(imdbIdStartIndex, movieResponseBody.indexOf('/', imdbIdStartIndex));
         }
         errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got: {1}\r\n'.format(movieTitles[index], movieRequestResult.reason());
@@ -146,7 +146,7 @@ function processInsiderMovieRequests(res, movieTitles, insiderMoviesUrls, movieR
 function processMovieCalendar(res, request, Promise, calendarResponse, calendarBody) {
     var Movie = require('../schemas/movie.js'),
         cheerio = require('cheerio'),
-        movieInfo = 'http://www.omdbapi.com/?i={0}&plot=full&r=json',
+        movieInfo = 'https://moviesapi.com/m.php?i={0}&type=movie&r=json',
         movies = [],
         movieTitles = [],
         insiderMoviesUrls = [],

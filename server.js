@@ -86,6 +86,8 @@ var interestingMovieProcessor = require('./processors/interestingMovie');
 app.get('/processors/markAsInteresting/:id', interestingMovieProcessor.execute);
 var moviesOnDvdProcessor = require('./processors/moviesOnDvd');
 app.get('/processors/moviesOnDvd', moviesOnDvdProcessor.execute);
+var newMoviesProcessor = require('./processors/newMovies');
+app.get('/processors/newMovies', newMoviesProcessor.execute);
 
 var stockProcessor = require('./processors/stocks');
 app.get('/processors/stocks', stockProcessor.execute);
