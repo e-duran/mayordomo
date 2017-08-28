@@ -18,6 +18,7 @@ exports.execute = function (req, res) {
             movieUrls[i] = $(anchor).attr("href");
             movieTitles[i] = $(anchor).text().trim();
         });
+        res.write('Got list of {0} movies opening this week'.format(movieTitles.length));
         moviePageRequests = movieUrls.map(function (url) {
             return request(url);
         });

@@ -38,12 +38,28 @@ if (!Array.prototype.find) {
   });
 }
 
-var env = process.env.NODE_ENV || "c9";
-var config = require(__dirname + '/config/' + env + '.js');
-global.config = config;
+var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080,
+    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0',
+    mongoURL = process.env.OPENSHIFT_MONGODB_DB_URL || process.env.MONGO_URL;
+
+if (mongoURL == null && process.env.DATABASE_SERVICE_NAME) {
+  var mongoServiceName = process.env.DATABASE_SERVICE_NAME.toUpperCase(),
+      mongoHost = process.env[mongoServiceName + '_SERVICE_HOST'],
+      mongoPort = process.env[mongoServiceName + '_SERVICE_PORT'],
+      mongoDatabase = process.env[mongoServiceName + '_DATABASE'],
+      mongoPassword = process.env[mongoServiceName + '_PASSWORD'],
+      mongoUser = process.env[mongoServiceName + '_USER'];
+
+  if (mongoHost && mongoPort && mongoDatabase) {
+    if (mongoUser && mongoPassword) {
+      mongoURL += mongoUser + ':' + mongoPassword + '@';
+    }
+    mongoURL += mongoHost + ':' +  mongoPort + '/' + mongoDatabase;
+  }
+}
 
 var mongoose = require('mongoose');
-mongoose.connect(config.mongoUrl);
+mongoose.connect(mongoURL);
 mongoose.connection.on('error', function (connectionError) {
     console.log('Mongoose Connection ' + connectionError);
 });
@@ -54,18 +70,27 @@ app.use(express.logger());
 app.use(express.bodyParser());
 app.use(express.methodOverride());
 app.disable('strict routing');
-if (config.enableCors) {
-    app.use(function(req, res, next) {
-        res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-        res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
-        if ('OPTIONS' === req.method) {
-            res.send(200);
-        } else {
-            next();
-        }
-    });
-}
+
+var Config = require('./schemas/config.js');
+Config.findOne(function (err, config) {
+    if (err) {
+        console.log('Config query error: ' + err);
+    }
+    global.config = config;
+    
+    if (config.enableCors) {
+        app.use(function(req, res, next) {
+            res.header("Access-Control-Allow-Origin", "*");
+            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+            res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+            if ('OPTIONS' === req.method) {
+                res.send(200);
+            } else {
+                next();
+            }
+        });
+    }
+});
 
 app.get('/ui', function (req, res) {
     res.redirect('/ui/index.html');
@@ -104,5 +129,5 @@ app.use(function(err, req, res, next) {
     return next(err);
 });
 
-app.listen(config.port, config.host);
-console.log('Express server for Mayordomo started on port %s', config.port);
+app.listen(port, ip);
+console.log('Express server for Mayordomo started on port %s', port);
