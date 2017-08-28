@@ -14,7 +14,7 @@
     "express": "~3.2.4",
     "mailgun-js": "^0.4.15",
     "moment-timezone": "^0.5.11",
-    "mongoose": "^3.8.22",
+    "mongoose": "4.7.3",
     "request": "^2.53.0",
     "rss": "^1.1.1",
     "sleep": "^3.0.0",
