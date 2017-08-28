@@ -99,8 +99,15 @@ app.get('/ui', function (req, res) {
 app.use('/ui/', express.static(__dirname + '/ui'));
 app.use(express.favicon("favicon.ico"));
 
+var processorsMap = {
+    blush: '/processors/blush',
+    movies: '/processors/newMovies',
+    stocks: '/processors/stocks',
+    supercuts: '/processors/supercuts'
+};
+global.processorsMap = processorsMap;
 var blushProcessor = require('./processors/blush');
-app.get('/processors/blush', blushProcessor.execute);
+app.get(processorsMap.blush, blushProcessor.execute);
 var blushFeed = require('./feeds/blush');
 app.get('/rss/blush', blushFeed.generate);
 
@@ -113,13 +120,16 @@ app.get('/processors/markAsInteresting/:id', interestingMovieProcessor.execute);
 var moviesOnDvdProcessor = require('./processors/moviesOnDvd');
 app.get('/processors/moviesOnDvd', moviesOnDvdProcessor.execute);
 var newMoviesProcessor = require('./processors/newMovies');
-app.get('/processors/newMovies', newMoviesProcessor.execute);
+app.get(processorsMap.movies, newMoviesProcessor.execute);
 
 var stockProcessor = require('./processors/stocks');
-app.get('/processors/stocks', stockProcessor.execute);
+app.get(processorsMap.stocks, stockProcessor.execute);
 
 var supercutsProcessor = require('./processors/supercuts');
-app.get('/processors/supercuts', supercutsProcessor.execute);
+app.get(processorsMap.supercuts, supercutsProcessor.execute);
+
+var taskProcessor = require('./processors/task.js');
+app.get('/processors/task', taskProcessor.execute);
 
 var movieApi = require('./api/movies');
 movieApi.register(app);
