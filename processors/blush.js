@@ -1,6 +1,7 @@
 "use strict";
 
-function error(res, message) {
+function error(res, message, db) {
+    db.close();
     res.write(message);
     res.end();
 }
@@ -31,8 +32,9 @@ function createDancers(res, Promise, dancers, Dancer, findDancerPromiseResults) 
 }
 
 exports.execute = function (req, res) {
-    var request = require('request');
-    res.type('text');
+    var request = require('request'),
+        db = global.getDB(res);
+    res.type('text/plain; charset=utf-8');
     request('http://www.blushexotic.com/girls/feature-dancers/', function (requestError, response, body) {
         var Promise = require("bluebird"),
             Dancer = require('../schemas/dancer.js'),
@@ -62,12 +64,13 @@ exports.execute = function (req, res) {
             spaceIndex,
             findDancerPromises;
 
+        Dancer = db.model('Dancer');
         if (!requestError && response.statusCode === 200) {
             res.write("Retrieved feature dancers Web page via GET request\r\n");
             startContentIndex = body.indexOf('<div id="full-width" class="content">');
             endContentIndex = body.indexOf('<!-- end main content holder (#content/#full-width) -->', startContentIndex);
             if (startContentIndex < 0 || endContentIndex < 0) {
-                return error(res, "Cannot find dancers content");
+                return error(res, "Cannot find dancers content", db);
             }
             content = body.substring(startContentIndex, endContentIndex);
             content = content.replace(/&nbsp;/g, '');
@@ -76,7 +79,7 @@ exports.execute = function (req, res) {
             doc = new Dom().parseFromString(content);
             nodes = xpath.select("/div/div/div/div/div", doc);
             if (!nodes || nodes.length === 0) {
-                return error(res, "Cannot find individual dancers content");
+                return error(res, "Cannot find individual dancers content", db);
             }
             dancers = [];
             for (i = 1; i < nodes.length; i++) {
@@ -90,22 +93,24 @@ exports.execute = function (req, res) {
                 datesNode = xpath.select("/div/div/div/div/div[" + i + "]/div/div/p/text()", doc);
                 dates = !datesNode ? null : datesNode.toString();
                 urlNode = xpath.select1("/div/div/div/div/div[" + i + "]/a/@href", doc);
-                url = !urlNode ? null : 'http://www.blushexotic.com' + urlNode.value;
+                url = !urlNode ? null : urlNode.value;
                 photoUrlNode = xpath.select1("/div/div/div/div/div[" + i + "]/a/div/img/@src", doc);
                 photoUrl = !photoUrlNode ? null : photoUrlNode.value;
                 fullResolutionPhotoUrl = null;
 
                 if (!name) {
-                    return error(res, "Cannot find name for dancer");
+                    return error(res, "Cannot find name for dancer", db);
                 }
                 if (!dates) {
-                    return error(res, "Cannot find dates for dancer");
+                    return error(res, "Cannot find dates for dancer", db);
                 }
                 if (!url) {
-                    return error(res, "Cannot find URL for dancer");
+                    return error(res, "Cannot find URL for dancer", db);
+                } else {
+                    url = url.substr(0, 4) === 'http' ? url : 'http://www.blushexotic.com' + url;
                 }
                 if (!photoUrl) {
-                    return error(res, "Cannot find photo URL for dancer");
+                    return error(res, "Cannot find photo URL for dancer", db);
                 }
                 dashIndex = photoUrl.lastIndexOf('-');
                 if (dashIndex > 0) {
@@ -145,14 +150,15 @@ exports.execute = function (req, res) {
                         }
                     }
                 });
+                db.close();
                 res.write("Finished saving dancers event information.\r\n");
                 res.end();
             });
         } else {
             if (requestError) {
-                return error(res, "Cannot retrieve feature dancers Web page via GET request, got " + requestError);
+                return error(res, "Cannot retrieve feature dancers Web page via GET request, got " + requestError, db);
             }
-            return error(res, "Cannot retrieve feature dancers Web page via GET request, got status code: " + response.statusCode);
+            return error(res, "Cannot retrieve feature dancers Web page via GET request, got status code: " + response.statusCode, db);
         }
     });
 };

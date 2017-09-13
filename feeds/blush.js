@@ -1,9 +1,11 @@
 "use strict";
 
 exports.generate = function (req, res) {
-    var Dancer = require('../schemas/dancer.js'),
+    var db = global.getDB(res),
+        Dancer = require('../schemas/dancer.js'),
         Rss = require('rss'),
         feed;
+    Dancer = db.model('Dancer');
     res.type('xml');
     feed = new Rss({
         title: 'Blush',
@@ -15,6 +17,7 @@ exports.generate = function (req, res) {
         pubDate: new Date()
     });
     Dancer.find().limit(20).sort('-createdAt').exec().then(function (dancers) {
+        db.close();
         var i;
         for (i = 0; i < dancers.length; i++) {
             feed.item({

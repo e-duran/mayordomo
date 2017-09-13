@@ -5,6 +5,8 @@ exports.register = function (app) {
         basePath = '/api/movies';
 
     app.get(basePath, function (req, res) {
+        var db = global.getDB(res);
+        Movie = db.model('Movie');
         Movie.find({ needsReview: false }).sort('-releasedDate').exec(function (error, movies) {
             if (error) {
                 res.status(500).type('text').send('Error: ' + error);
@@ -15,6 +17,8 @@ exports.register = function (app) {
     });
 
     app.get(basePath + '/:id', function (req, res) {
+        var db = global.getDB(res);
+        Movie = db.model('Movie');
         Movie.findById(req.params.id, function (error, movie) {
             if (error) {
                 res.status(500).type('text').send('Error: ' + error);
@@ -25,6 +29,8 @@ exports.register = function (app) {
     });
 
     app.post(basePath + '/missing/', function (req, res) {
+        var db = global.getDB(res);
+        Movie = db.model('Movie');
         var request = require('request'),
             imdbId = req.body.imdbId;
         if (!imdbId) {
@@ -69,6 +75,8 @@ exports.register = function (app) {
     });
 
     app.put(basePath + '/:id', function (req, res) {
+        var db = global.getDB(res);
+        Movie = db.model('Movie');
         delete req.body._id;
         req.body.modifiedAt = new Date();
         Movie.findByIdAndUpdate(req.params.id, { $set: req.body }, function (error, movie) {
@@ -81,6 +89,8 @@ exports.register = function (app) {
     });
 
     app.delete(basePath + '/:id', function (req, res) {
+        var db = global.getDB(res);
+        Movie = db.model('Movie');
         Movie.findByIdAndRemove(req.params.id, function (error) {
             if (error) {
                 res.status(500).send('Error: ' + error);

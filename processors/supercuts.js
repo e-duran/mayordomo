@@ -5,23 +5,26 @@ exports.execute = function (req, res) {
         request = Promise.promisifyAll(require("request")),
         moment = require('moment-timezone'),
         now = moment().tz('America/New_York'),
-        stylistId = global.config.stylistId,
-        stylistName = global.config.stylistName,
+        config = global.config,
+        stylistId = config.stylistId,
+        stylistName = config.stylistName,
         Stylist = require('../schemas/stylist.js'),
         today = moment(now).startOf('day'),
         tomorrow = moment(today).add(1, 'day'),
         lastTime,
         stylistInfo,
-        stylistModel;
+        stylistModel,
+        db = global.getDB();
 
-    res.type('text');
+    res.type('text/plain; charset=utf-8');
     if (now.hour() < 9 || now.hour() >= 21) {
         res.write('Skipped processing due to out of business hours\n');
         res.end();
         return;
     }
     
-    request.getAsync(global.config.stylistInfoUrl)
+    Stylist = db.model('Stylist');
+    request.getAsync(config.stylistInfoUrl)
     .spread(function (response, body) {
         if (response.statusCode !== 200) { return Promise.reject('Cannot get list of stylists: got {0} status code and response body \n\n{1}'.format(response.statusCode, body)); }
         
@@ -59,6 +62,7 @@ exports.execute = function (req, res) {
         }
     })
     .finally(function () {
+        db.close();
         res.write('\nEnd of processing.\n');
         res.end();
     });

@@ -3,7 +3,8 @@ function na(v) {
     return v || 'N/A';
 }
 exports.generate = function (req, res) {
-    var Movie = require('../schemas/movie.js'),
+    var db = global.getDB(res),
+        Movie = require('../schemas/movie.js'),
         Rss = require('rss'),
         today = new Date(),
         markAsInterestingUrl = '{0}/processors/markAsInteresting/{1}',
@@ -16,6 +17,7 @@ exports.generate = function (req, res) {
         movie,
         feed;
     res.type('xml');
+    Movie = db.model('Movie');
     feed = new Rss({
         title: 'Movies',
         description: 'Calendar of nation-wide releases of movies to theaters',
@@ -34,6 +36,7 @@ exports.generate = function (req, res) {
     }
     // Find the most recently created movies (don't use modified date because reviewed movies or movies changed via the UI would be included)
     Movie.find().sort('-createdAt').limit(20).exec().then(function (movies) {
+        db.close();
         for (i = 0; i < movies.length; i++) {
             movie = movies[i];
             description = content.format(movie.poster || missingPoster, na(movie.rated), movie.releasedDate ? movie.releasedDate.toDateString().substring(4) : 'N/A', 

@@ -5,8 +5,9 @@ exports.execute = function (req, res) {
         $,
         movieTitles = [],
         movieUrls = [],
-        movies = [];
-    res.type('text');
+        movies = [],
+        db = global.getDB(res);
+    res.type('text/plain; charset=utf-8');
     request('http://www.movieinsider.com/movies/this-week/').spread(function (movieCalendarResponse, movieCalendar) {
         var moviePageRequests;
         
@@ -18,7 +19,7 @@ exports.execute = function (req, res) {
             movieUrls[i] = $(anchor).attr("href");
             movieTitles[i] = $(anchor).text().trim();
         });
-        res.write('Got list of {0} movies opening this week'.format(movieTitles.length));
+        res.write('Got list of {0} movies opening this week\r\n'.format(movieTitles.length));
         moviePageRequests = movieUrls.map(function (url) {
             return request(url);
         });
@@ -36,6 +37,7 @@ exports.execute = function (req, res) {
                 imdbIdStartIndex,
                 Movie = require('../schemas/movie.js');
     
+            Movie = db.model('Movie');
             if (moviePageResponse.isFulfilled()) {
                 resultValue = moviePageResponse.value();
                 movieResponse = resultValue[0];
@@ -122,6 +124,7 @@ exports.execute = function (req, res) {
             res.write(error + '\r\n');
         }
     }).finally(function () {
+        db.close();
         res.write('End of processing.\r\n');
         res.end();
     });

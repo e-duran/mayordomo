@@ -2,8 +2,10 @@
 exports.execute = function (req, res) {
     var Movie = require('../schemas/movie.js'),
         id = req.params.id,
-        message;
+        message,
+        db = global.db();
     res.type('text');
+    Movie = db.model('Movie');
     Movie.update({ _id: id }, { isInteresting: true }, function (error, numberAffected) {
         if (error) {
             message = 'Error while updating movie {0}: {1}'.format(id, error);
@@ -12,6 +14,7 @@ exports.execute = function (req, res) {
         } else {
             message = 'Movie {0} was marked as interesting.'.format(id);
         }
+        db.close();
         res.send(message);
     });
 };

@@ -4,26 +4,27 @@ exports.execute = function (req, res) {
     var Promise = require("bluebird"),
         cheerio = require('cheerio'),
         request = Promise.promisify(require('request')),
+        config = global.config,
         Mailgun = require('mailgun-js'),
-        mailgun = new Mailgun({apiKey: global.config.mailgunApiKey, domain: global.config.mailgunDomain}),
-        stocks = global.config.stockWatchList.split(','),
+        mailgun = new Mailgun({apiKey: config.mailgunApiKey, domain: config.mailgunDomain}),
+        stocks = config.stockWatchList.split(','),
         requestStockPromises = stocks.map(function (stock) {
             var quote = stock.split('|')[0];
             return request('https://www.google.com/finance?q=' + quote);
         });
-    res.type('text');
+    res.type('text/plain; charset=utf-8');
     Promise.settle(requestStockPromises)
     .then(function (requestStockPromiseResults) {
         requestStockPromiseResults.forEach(function (requestStockPromiseResult, i) {
-            var quote = global.config.stockWatchList.split(',')[i].split('|')[0],
-                priceLimit = parseFloat(global.config.stockWatchList.split(',')[i].split('|')[1]),
+            var quote = config.stockWatchList.split(',')[i].split('|')[0],
+                priceLimit = parseFloat(config.stockWatchList.split(',')[i].split('|')[1]),
                 response,
                 $,
                 price,
                 dateTime,
                 data = {
-                    from: global.config.stockWatchListFrom,
-                    to: global.config.stockWatchListTo,
+                    from: config.stockWatchListFrom,
+                    to: config.stockWatchListTo,
                     subject: 'Stock {0} is at {1}',
                     html: 'The stock {0} is at or over the notification limit {1} as of {2}<br>See https://www.google.com/finance?q={3} for more details'
                 };

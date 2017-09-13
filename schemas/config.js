@@ -9,7 +9,7 @@ var ConfigSchema = new mongoose.Schema({
         stockWatchListFrom: String,
         stockWatchListTo: String,
         stylistId: Number,
-        sylisttName: String,
+        stylistName: String,
         stylistInfoUrl: String
     });
 
