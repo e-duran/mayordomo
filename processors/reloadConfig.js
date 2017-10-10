@@ -11,6 +11,6 @@ exports.execute = function (req, res) {
             return;
         }
         global.config = config;
-        res.json(config);
+        res.send('Configuration reloaded.');
     });
 };

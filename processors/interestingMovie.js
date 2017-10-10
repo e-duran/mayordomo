@@ -3,7 +3,7 @@ exports.execute = function (req, res) {
     var Movie = require('../schemas/movie.js'),
         id = req.params.id,
         message,
-        db = global.db();
+        db = global.getDB();
     res.type('text');
     Movie = db.model('Movie');
     Movie.update({ _id: id }, { isInteresting: true }, function (error, numberAffected) {
