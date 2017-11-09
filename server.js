@@ -142,4 +142,5 @@ app.use(function (err, req, res, next) {
 
 app.listen(port, ip);
 console.log('Express server for Mayordomo started on port %s', port);
+
 global.getConfig();
