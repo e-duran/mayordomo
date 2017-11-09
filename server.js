@@ -70,6 +70,18 @@ global.getDB = function (res) {
     });
     return db;
 };
+global.getConfig = function () {
+    var Promise = require('bluebird');
+    if (global.config) return Promise.resolve(global.config);
+    var db = global.getDB();
+    var Config = require('./schemas/config.js');
+    Config = db.model('Config');
+    return Config.findOne().exec().then(function (config) {
+        db.close();
+        global.config = config;
+        return Promise.resolve(config);
+    });
+};
 
 var express = require('express');
 var app = express();
@@ -130,15 +142,4 @@ app.use(function (err, req, res, next) {
 
 app.listen(port, ip);
 console.log('Express server for Mayordomo started on port %s', port);
-
-var db = global.getDB();
-var Config = require('./schemas/config.js');
-Config = db.model('Config');
-Config.findOne(function (err, config) {
-    db.close();
-    if (err) {
-        console.log('Error while querying app configuration: ' + err);
-        return;
-    }
-    global.config = config;
-});
+global.getConfig();
