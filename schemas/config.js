@@ -10,7 +10,9 @@ var ConfigSchema = new mongoose.Schema({
         stockWatchListTo: String,
         stylistId: Number,
         stylistName: String,
-        stylistInfoUrl: String
+        stylistInfoUrl: String,
+        videoPlaylists: String,
+        videoClientId: String,
     });
 
 module.exports = mongoose.model('Config', ConfigSchema);

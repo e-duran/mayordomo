@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+  <head>
+    <title>YouTube Tracker</title>
+    <link rel="stylesheet" type="text/css" href="youtube.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+	  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+  </head>
+  <body>
+    <div id="login-container" class="pre-auth">
+      This application requires access to your YouTube account.
+      Please <a href="#" id="login-link">authorize</a> to continue.
+    </div>
+    <div id ="video-container"></div>
+    <div class="button-container">
+      <button id="prev-button" class="paging-button" onclick="previousPage();">Previous Page</button>
+      <button id="next-button" class="paging-button" onclick="nextPage();">Next Page</button>
+    </div>
+    <script src="https://code.jquery.com/jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="auth.js"></script>
+    <script type="text/javascript" src="youtube.js"></script>
+    <script src="https://apis.google.com/js/client.js?onload=googleApiClientReady"></script>
+  </body>
+</html>

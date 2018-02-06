@@ -1,0 +1,40 @@
+.paging-button {
+  visibility: hidden;
+}
+
+.button-container {
+  clear: both;
+}
+
+#video-container {
+	font-family: 'Roboto';
+	font-size: 14px;
+}
+
+table {
+	border-collapse:collapse;
+	table-layout:fixed;
+}
+
+table td {
+	max-width:320px;
+	word-wrap:break-word;
+}
+	
+.channelName {
+	font-size: 24px;
+}
+
+.tool {
+	padding-left: 1em;
+}
+
+.videos {
+	width: 100%;
+	overflow: auto;
+	margin-bottom: 1em;
+}
+
+.vd {
+	margin-left: 6px;
+}

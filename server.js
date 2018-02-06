@@ -133,6 +133,8 @@ app.get('/processors/reloadConfig', reloadConfigProcessor.execute);
 
 var movieApi = require('./api/movies');
 movieApi.register(app);
+var videoApi = require('./api/videos');
+videoApi.register(app);
 
 app.use(function (err, req, res, next) {
     if(!err) return next();
