@@ -186,10 +186,14 @@ function getVideoDuration(videoId) {
         console.log(duration);
         duration = duration.substr(2, duration.length - 3);
         var minuteMarker = duration.indexOf('M');
-        duration = duration.replace('M', ':');
-        var seconds = duration.substring(minuteMarker + 1);
-        if (seconds < 10) {
-            duration = duration.substring(0, minuteMarker) + ':0' + seconds;
+        if (minuteMarker == -1) {
+            duration += ':00'; 
+        } else {
+            duration = duration.replace('M', ':');
+            var seconds = duration.substring(minuteMarker + 1);
+            if (seconds < 10) {
+                duration = duration.substring(0, minuteMarker) + ':0' + seconds;
+            }
         }
         $('#' + videoId + '-duration').text(`(${duration})`);
     });
