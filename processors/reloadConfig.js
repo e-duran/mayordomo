@@ -1,16 +1,13 @@
 "use strict";
 
-exports.execute = function (req, res) {
-    var db = global.getDB(res);
-    var Config = require('../schemas/config.js');
-    Config = db.model('Config');
-    Config.findOne(function (err, config) {
-        db.close();
-        if (err) {
-            res.send('Error while querying app configuration: ' + err);
-            return;
+exports.execute = async function (req, res) {
+    try {
+        let config = await global.getConfig();
+        if (config) {
+            global.config = config;
+            res.send('Configuration reloaded.');
         }
-        global.config = config;
-        res.send('Configuration reloaded.');
-    });
+    } catch (err) {
+        res.send('Cannot reload configuration  - ' + err);
+    }
 };

@@ -1,7 +1,7 @@
 {
   "name": "mayordomo",
-  "version": "0.5.0",
-  "description": "A butler for your RSS needs, specially for sites that cannot be bothered to provide a proper RSS feed or API",
+  "version": "1.0.0",
+  "description": "A butler for your RSS needs, especially for sites that cannot be bothered to provide a proper RSS feed or API",
   "main": "server.js",
   "repository": {
     "type": "git",
@@ -9,17 +9,12 @@
   },
   "author": "Eric Duran <eduran@gmail.com>",
   "dependencies": {
-    "bluebird": "^2.9.6",
-    "cheerio": "^0.19.0",
-    "express": "~3.2.4",
-    "mailgun-js": "^0.4.15",
-    "moment-timezone": "^0.5.11",
-    "mongoose": "4.7.3",
-    "request": "^2.53.0",
-    "rss": "^1.1.1",
-    "sleep": "^3.0.0",
-    "xmldom": "^0.1.19",
-    "xpath": "0.0.9"
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "method-override": "^2.3.10",
+    "mongodb": "^3.0.2",
+    "morgan": "^1.9.0",
+    "serve-favicon": "^2.4.5"
   },
   "scripts": {
     "start": "node server.js"

@@ -1,6 +1,6 @@
 ## Synopsis
 
-A butler for your RSS needs, specially for sites that cannot be bothered to provide a proper RSS feed or API.
+A butler for your RSS needs, especially for sites that cannot be bothered to provide a proper RSS feed or API.
 
 ## Motivation
 
