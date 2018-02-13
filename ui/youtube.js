@@ -76,6 +76,7 @@ function getVideosByChannelId(channelId) {
         part: 'snippet',
         channelId: channelId,
         order: 'date',
+        type: 'video',
         fields: 'items(id,snippet(channelId,channelTitle,publishedAt,thumbnails(default,medium),title))',
         maxResults: 10
     };
@@ -97,7 +98,7 @@ function getVideosByChannelId(channelId) {
             var stop = false;
             
             $.each(videoItems, function(index, item) {
-                let videoId = item.id.videoId;
+                var videoId = item.id.videoId;
                 if (videoId !== lastVideoId && !stop) {
                     displayResult(videoId, item.snippet, row);
                     tableWidth += 320 + 20; 
