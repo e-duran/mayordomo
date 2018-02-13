@@ -48,7 +48,7 @@ function requestVideoPlaylist(playlistId, pageToken) {
     var playlistItems = response.result.items;
     if (playlistItems) {
       $.each(playlistItems, function(index, item) {
-        getChannelBySavedVideoId(item.contentDetails.videoId);
+        getVideosByBookmarkedVideoId(item.contentDetails.videoId);
       });
     } else {
       console.log('Sorry, no videos for playlist ' + playlistId);
@@ -56,9 +56,9 @@ function requestVideoPlaylist(playlistId, pageToken) {
   });
 }
 
-function getChannelBySavedVideoId(videoId) {
+function getVideosByBookmarkedVideoId(bookmarkedVideoId) {
     var requestOptions = {
-        id: videoId,
+        id: bookmarkedVideoId,
         part: 'snippet',
         fields: 'items/snippet/channelId'
     };
@@ -66,53 +66,40 @@ function getChannelBySavedVideoId(videoId) {
     request.execute(function(response) {
         var videos = response.result.items;
         if (videos && videos.length > 0) {
-            getChannelByChannelId(videos[0].snippet.channelId);
+            getVideosByChannelId(videos[0].snippet.channelId);
         }
     });
 }
 
-function getChannelByChannelId(channelId) {
+function getVideosByChannelId(channelId) {
     var requestOptions = {
-        id: channelId,
-        part: 'snippet,contentDetails',
-        fields: 'items(contentDetails/relatedPlaylists/uploads,snippet/title)'
-    };
-    var request = gapi.client.youtube.channels.list(requestOptions);
-    request.execute(function(response) {
-        var channels = response.result.items;
-        if (channels && channels.length > 0) {
-            getVideosByChannel(channels[0]);
-        }
-    });
-}
-
-function getVideosByChannel(channel) {
-    var channelName = channel.snippet.title;
-    var requestOptions = {
-        playlistId: channel.contentDetails.relatedPlaylists.uploads,
         part: 'snippet',
-        fields: 'items(snippet(channelId,publishedAt,resourceId/videoId,thumbnails(default,medium),title))',
+        channelId: channelId,
+        order: 'date',
+        fields: 'items(id,snippet(channelId,channelTitle,publishedAt,thumbnails(default,medium),title))',
         maxResults: 10
     };
-    var request = gapi.client.youtube.playlistItems.list(requestOptions);
+    var request = gapi.client.youtube.search.list(requestOptions);
     request.execute(function(response) {
-        var playlistItems = response.result.items;
+        var videoItems = response.result.items;
         var container = $('#video-container');
-        if (playlistItems) {
+        if (videoItems) {
+            var channelName = videoItems[0].snippet.channelTitle;
             var channelDiv = $("<div/>").addClass("channelName").text(channelName);
             var videosDiv = $("<div/>").addClass("videos");
             var table = $('<table/>');
             var tableWidth = 0;
             var row = $('<tr/>');
             var lastVideoPair = videosMap.find(function(videoPair){
-                return videoPair.channel === playlistItems[0].snippet.channelId;
+                return videoPair.channel === channelId;
             });
             var lastVideoId = lastVideoPair ? lastVideoPair.lastVideoSeen : null;
             var stop = false;
             
-            $.each(playlistItems, function(index, item) {
-                if (item.snippet.resourceId.videoId !== lastVideoId && !stop) {
-                    displayResult(item.snippet, row);
+            $.each(videoItems, function(index, item) {
+                let videoId = item.id.videoId;
+                if (videoId !== lastVideoId && !stop) {
+                    displayResult(videoId, item.snippet, row);
                     tableWidth += 320 + 20; 
                 } else {
                     stop = true;
@@ -131,12 +118,11 @@ function getVideosByChannel(channel) {
 }
 
 // Create a listing for a video.
-function displayResult(snippet, row) {
+function displayResult(videoId, snippet, row) {
   var title = snippet.title;
   var date = new Date(snippet.publishedAt).toDateString();
   var image = snippet.thumbnails.medium || snippet.thumbnails.default;
   var channelId = snippet.channelId;
-  var videoId = snippet.resourceId.videoId;
   var openHandler = `onclick="openVideo('${channelId}', '${videoId}')"`;
   var markHandler = `onclick="markVideo('${channelId}', '${videoId}')"`;
   var durationHandler = `onclick="getVideoDuration('${videoId}')"`;
@@ -169,7 +155,7 @@ function markVideo(channelId, videoId) {
         contentType: "application/json; charset=utf-8",
         processData: false
     })
-    .done(function(savedVideo) {
+    .done(function(markedVideo) {
         $('#' + videoId).css('opacity', '0.2');
     });
 }
@@ -183,7 +169,6 @@ function getVideoDuration(videoId) {
     var request = gapi.client.youtube.videos.list(requestOptions);
     request.execute(function(response) {
         var duration = response.result.items[0].contentDetails.duration;
-        console.log(duration);
         duration = duration.substr(2, duration.length - 3);
         var minuteMarker = duration.indexOf('M');
         if (minuteMarker == -1) {
@@ -203,12 +188,13 @@ function logVideoInfo(channelId, videoId) {
     console.log('Channedl ID: ' + channelId);
     console.log('Video ID: ' + videoId);
 }
-// Retrieve the next page of videos in the playlist.
-// function nextPage() {
-//   requestVideoPlaylist(playlistId, nextPageToken);
-// }
 
-// // Retrieve the previous page of videos in the playlist.
-// function previousPage() {
-//   requestVideoPlaylist(playlistId, prevPageToken);
-// }
+// Retrieve the next page of videos in the playlist.
+function nextPage() {
+  requestVideoPlaylist(playlistId, nextPageToken);
+}
+
+// Retrieve the previous page of videos in the playlist.
+function previousPage() {
+  requestVideoPlaylist(playlistId, prevPageToken);
+}
