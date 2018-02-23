@@ -5,6 +5,8 @@
     <link rel="stylesheet" type="text/css" href="youtube.css">
     <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
 	  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+	  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+	  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
   </head>
   <body>
     <div id="login-container" class="pre-auth">
@@ -16,9 +18,12 @@
       <button id="prev-button" class="paging-button" onclick="previousPage();">Previous Page</button>
       <button id="next-button" class="paging-button" onclick="nextPage();">Next Page</button>
     </div>
-    <script src="https://code.jquery.com/jquery-1.8.2.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script type="text/javascript" src="auth.js"></script>
     <script type="text/javascript" src="youtube.js"></script>
-    <script src="https://apis.google.com/js/client.js?onload=googleApiClientReady"></script>
+    <script async defer src="https://apis.google.com/js/api.js" 
+        onload="this.onload=function(){};handleClientLoad()" 
+        onreadystatechange="if (this.readyState === 'complete') this.onload()">
+    </script>
   </body>
 </html>

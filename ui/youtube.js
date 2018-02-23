@@ -1,5 +1,5 @@
-/* global $, gapi */
-var nextPageToken, prevPageToken, videosMap;
+/* global $, gapi, toastr */
+var lastPlaylistId, nextPageToken, prevPageToken, videosMap;
 
 // After the API loads, call a function to get bookmarked videos stored in pre-defined playlists
 function handleAPILoaded() {
@@ -14,16 +14,23 @@ function handleAPILoaded() {
             cache: false
         })
         .done(function(playlists) {
+            console.log(`Processing ${playlists.length} playlists - ${new Date()}`);
             videosMap = videos;
             $.each(playlists, function(index, item) {
                 requestVideoPlaylist(item);
             });
+            toastr.options = {
+              "closeButton": true,
+              "timeOut": 0,
+              "extendedTimeOut": 0,
+            };
         });
     });
 }
 
 // Retrieve the list of videos in the specified playlist.
 function requestVideoPlaylist(playlistId, pageToken) {
+  lastPlaylistId = playlistId;
   $('#video-container').html('');
   var requestOptions = {
     playlistId: playlistId,
@@ -121,25 +128,27 @@ function getVideosByChannelId(channelId) {
 // Create a listing for a video.
 function displayResult(videoId, snippet, row) {
   var title = snippet.title;
-  var date = new Date(snippet.publishedAt).toDateString();
+  var date = new Date(snippet.publishedAt);
+  var dateString = date.toDateString() + ' ';
+  var time = date.toTimeString().substr(0, 8);
+  dateString += time.charAt(0) == 0 ? time.substr(1) : time;
   var image = snippet.thumbnails.medium || snippet.thumbnails.default;
   var channelId = snippet.channelId;
   var openHandler = `onclick="openVideo('${channelId}', '${videoId}')"`;
   var markHandler = `onclick="markVideo('${channelId}', '${videoId}')"`;
-  var durationHandler = `onclick="getVideoDuration('${videoId}')"`;
   var infoHandler = `onclick="logVideoInfo('${channelId}', '${videoId}')"`;
   
   var video = `<td id="${videoId}">
 					<div><img src="${image.url}" ${openHandler}></div>
-					<div>${title}</div>
-					<div>${date} <span id="${videoId}-duration" class="vd"></span>
-					    <i class="fas fa-check-circle tool" ${markHandler}></i>
-					    <i class="fas fa-clock tool" ${durationHandler}></i>
+					<div id="${videoId}-title">${title}</div>
+					<div><span class="metadata">${dateString} <span id="${videoId}-duration" class="vid-duration"></span></span>
+					    <i class="fas fa-check-circle toolbar" ${markHandler}></i>
 					    <i class="fas fa-info-circle tool" ${infoHandler} title="Info"></i>
 					</div>
 				</td>`;
   
   row.append(video);
+  getVideoDuration(videoId);
 }
 
 function openVideo(channelId, videoId) {
@@ -158,6 +167,13 @@ function markVideo(channelId, videoId) {
     })
     .done(function(markedVideo) {
         $('#' + videoId).css('opacity', '0.2');
+    })
+    .fail(function(jqXHR, textStatus, errorThrown) {
+        var videoName = $(`#${videoId}-title`).text();
+        var status = textStatus || 'N/A';
+        var error = errorThrown || 'N/A';
+        console.log(`Video "${videoName}" with ID ${videoId} could not be marked as seen. Status: ${status}. Error: ${error}`);
+        toastr.error(`<span class="notification">Couldn't mark video as seen</span>`);
     });
 }
 
@@ -192,10 +208,10 @@ function logVideoInfo(channelId, videoId) {
 
 // Retrieve the next page of videos in the playlist.
 function nextPage() {
-  requestVideoPlaylist(playlistId, nextPageToken);
+  requestVideoPlaylist(lastPlaylistId, nextPageToken);
 }
 
 // Retrieve the previous page of videos in the playlist.
 function previousPage() {
-  requestVideoPlaylist(playlistId, prevPageToken);
+  requestVideoPlaylist(lastPlaylistId, prevPageToken);
 }

@@ -25,8 +25,12 @@ table td {
 	font-size: 24px;
 }
 
+.toolbar {
+	padding-left: 1.25em;
+}
+
 .tool {
-	padding-left: 1em;
+	padding-left: .5em;
 }
 
 .videos {
@@ -35,6 +39,16 @@ table td {
 	margin-bottom: 1em;
 }
 
-.vd {
+.vid-duration {
 	margin-left: 6px;
+}
+
+.metadata {
+	font-family: 'Segoe UI';
+	font-size: 12px;
+}
+
+.notification {
+	font-family: 'Roboto';
+	font-size: 12px;
 }
