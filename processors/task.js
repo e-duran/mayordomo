@@ -1,26 +1,29 @@
-"use strict";
+'use strict';
 
-exports.execute = function (req, res) {
-    global.getConfig().then(function (config) {
+exports.execute = async function (req, res) {
+    res.type('text/plain; charset=utf-8');
+    
+    var log = function (message, error) { global.log(res, message, error) };
+    var logStore = null;
+    
+    try {
+        if (!global.config) global.config = await global.getConfig(); 
         var name = req.query.processorName;
         var processorPath = global.processorsMap[name];
-        var url = config.publicHost + processorPath;
-        var request = require('request');
-        var fs = require('fs');
-        res.type('text');
-        request(url, function (error, response, body) {
-            if (error) {
-                return console.log('Error while requesting ' + url + ': ' + error);
-            }
-            if (response.statusCode != 200 && !body) {
-                body = 'Got error status code: ' + response.statusCode;
-            }
-            fs.writeFile('/tmp/task-' + name + '.log', body, function(error) {
-                if (error) {
-                    return console.log('Error writing task ' + name + ' log file: ' + error);
-                }
-            });
+        var url = global.config.publicHost + processorPath;
+        var axios = require('axios');
+        axios.get(url).then(async function (response) {
+            logStore = await global.getStore('logs');
+            var logEntry = { category: name , data: response.data, timestamp: new Date() };
+            var result = await logStore.insertOne(logEntry);
+            console.log(`Log entry created with ID ${result.insertedId}`);
+            logStore.client.close();
         });
         res.send('Called processor ' + name);
-    });
+    } catch (e) {
+        log('Exception', e);
+        if (logStore) {
+            logStore.client.close();
+        }
+    }
 };

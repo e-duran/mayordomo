@@ -1,164 +1,59 @@
-"use strict";
+'use strict';
 
-function error(res, message, db) {
-    db.close();
-    res.write(message);
-    res.end();
-}
-
-function createDancers(res, Promise, dancers, Dancer, findDancerPromiseResults) {
-    var promises = findDancerPromiseResults.map(function (findDancerResult, index) {
-        var errorMessage,
-            rejectionReason,
-            dancerExists,
-            dancer = dancers[index];
-        if (findDancerResult.isFulfilled()) {
-            dancerExists = findDancerResult.value() !== null;
-            if (dancerExists) {
-                errorMessage = "Dancer {0} already exists\r\n".format(dancer.name);
-                res.write(errorMessage);
-                return Promise.resolve({ dancerExists: true });
-            }
-            return Dancer.create(dancer);
-        }
-        rejectionReason = findDancerResult.reason();
-        if (rejectionReason.handled === undefined) {
-            errorMessage = "Error while finding dancer {0}: {1}\r\n".format(dancer.name, rejectionReason);
-            res.write(errorMessage);
-        }
-        return Promise.reject({ handled: true });
-    });
-    return promises;
-}
-
-exports.execute = function (req, res) {
-    var request = require('request'),
-        db = global.getDB(res);
+exports.execute = async function (req, res) {
     res.type('text/plain; charset=utf-8');
-    request('http://www.blushexotic.com/girls/feature-dancers/', function (requestError, response, body) {
-        var Promise = require("bluebird"),
-            Dancer = require('../schemas/dancer.js'),
-            xpath = require('xpath'),
-            Dom = require('xmldom').DOMParser,
-            thisYear = new Date().getFullYear(),
-            startContentIndex,
-            endContentIndex,
-            content,
-            doc,
-            nodes,
-            dancers,
-            i,
-            classAttribute,
-            nameNode,
-            name,
-            datesNode,
-            dates,
-            urlNode,
-            url,
-            photoUrlNode,
-            photoUrl,
-            fullResolutionPhotoUrl,
-            dashIndex,
-            startDate,
-            endDate,
-            spaceIndex,
-            findDancerPromises;
-
-        Dancer = db.model('Dancer');
-        if (!requestError && response.statusCode === 200) {
-            res.write("Retrieved feature dancers Web page via GET request\r\n");
-            startContentIndex = body.indexOf('<div id="full-width" class="content">');
-            endContentIndex = body.indexOf('<!-- end main content holder (#content/#full-width) -->', startContentIndex);
-            if (startContentIndex < 0 || endContentIndex < 0) {
-                return error(res, "Cannot find dancers content", db);
+    
+    var log = function (message, error) { global.log(res, message, error) };
+    var dancerStore = null;
+    
+    try {
+        if (!global.config) global.config = await global.getConfig(); 
+        var config = global.config;
+        
+        var axios = require('axios');
+        var dancersPageResponse = await axios.get(config.dancersWebPage);
+        
+        var cheerio = require('cheerio');
+        var $ = cheerio.load(dancersPageResponse.data);
+        var dancers = [];
+        $('.services-box').each(function (i, element) {
+            var $pe = $(element);
+            var dancer = {
+                name: $pe.find('.sc-wraper h3 a').text(),
+                dates: $pe.find('.sc-wraper p').text(),
+                url: $pe.find('.sc-wraper h3 a').attr('href'),
+                photoUrl: $pe.find('.img-container img').attr('src'),
+                createdAt: new Date()
+            };
+            
+            if (!dancer.name) throw new Error('Cannot find dancer name');
+            if (!dancer.dates) throw new Error('Cannot find dancer event dates');
+            if (!dancer.url) throw new Error('Cannot find dancer event URL');
+            if (!dancer.photoUrl) throw new Error('Cannot find dancer photo URL');
+            
+            dancers[i] = dancer;
+        });
+        if (dancers.length == 0) log('Error: Initial selector did not return any nodes');
+        
+        dancerStore = await global.getStore('dancers');
+        for (let i = 0; i < dancers.length; i++) {
+            let dancer = dancers[i];
+            var existingDancer = await dancerStore.findOne({ name: dancer.name, dates: dancer.dates });
+            if (existingDancer) {
+                log(`Event information for ${dancer.name} already exists`);
+                continue;
             }
-            content = body.substring(startContentIndex, endContentIndex);
-            content = content.replace(/&nbsp;/g, '');
-            res.write("Content for parsing:\r\n" + content + "\r\n");
-
-            doc = new Dom().parseFromString(content);
-            nodes = xpath.select("/div/div/div/div/div", doc);
-            if (!nodes || nodes.length === 0) {
-                return error(res, "Cannot find individual dancers content", db);
-            }
-            dancers = [];
-            for (i = 1; i < nodes.length; i++) {
-                classAttribute = xpath.select1("/div/div/div/div/div[" + i + "]/@class", doc);
-                if (!classAttribute || classAttribute.value.indexOf('services-no-content') > -1 || classAttribute.value.indexOf('clear') > -1) {
-                    continue;
-                }
-
-                nameNode = xpath.select1("/div/div/div/div/div[" + i + "]/a/div/img/@alt", doc);
-                name = !nameNode ? null : nameNode.value;
-                datesNode = xpath.select("/div/div/div/div/div[" + i + "]/div/div/p/text()", doc);
-                dates = !datesNode ? null : datesNode.toString();
-                urlNode = xpath.select1("/div/div/div/div/div[" + i + "]/a/@href", doc);
-                url = !urlNode ? null : urlNode.value;
-                photoUrlNode = xpath.select1("/div/div/div/div/div[" + i + "]/a/div/img/@src", doc);
-                photoUrl = !photoUrlNode ? null : photoUrlNode.value;
-                fullResolutionPhotoUrl = null;
-
-                if (!name) {
-                    return error(res, "Cannot find name for dancer", db);
-                }
-                if (!dates) {
-                    return error(res, "Cannot find dates for dancer", db);
-                }
-                if (!url) {
-                    return error(res, "Cannot find URL for dancer", db);
-                } else {
-                    url = url.substr(0, 4) === 'http' ? url : 'http://www.blushexotic.com' + url;
-                }
-                if (!photoUrl) {
-                    return error(res, "Cannot find photo URL for dancer", db);
-                }
-                dashIndex = photoUrl.lastIndexOf('-');
-                if (dashIndex > 0) {
-                    fullResolutionPhotoUrl = photoUrl.substring(0, dashIndex) + '.jpg';
-                }
-
-                dashIndex = dates.indexOf('-');
-                if (dashIndex > 0) {
-                    startDate = new Date('{0}, {1}'.format(dates.substring(0, dashIndex), thisYear));
-                    spaceIndex = dates.indexOf(' ');
-                    endDate = new Date('{0} {1}, {2}'.format(dates.substring(0, spaceIndex), dates.substring(dashIndex + 2), thisYear));
-                } else {
-                    startDate = new Date('{0}, {1}'.format(dates, thisYear));
-                    endDate = startDate;
-                }
-                dancers[i - 1] = new Dancer({ name: name, dates: dates, url: url, photoUrl: photoUrl, fullResolutionPhotoUrl: fullResolutionPhotoUrl, startDate: startDate, endDate: endDate });
-            }
-            res.write("Finished parsing dancers content\r\n");
-            findDancerPromises = dancers.map(function (dancer) {
-                return Dancer.findOne({ name: dancer.name, dates: dancer.dates }).exec();
-            });
-            Promise.settle(findDancerPromises).then(function (findDancerPromiseResults) {
-                return createDancers(res, Promise, dancers, Dancer, findDancerPromiseResults);
-            }).settle().then(function (createDancersPromiseResults) {
-                createDancersPromiseResults.map(function (createDancersPromiseResult, index) {
-                    var resultValue,
-                        rejectionReason;
-                    if (createDancersPromiseResult.isFulfilled()) {
-                        resultValue = createDancersPromiseResult.value();
-                        if (resultValue.dancerExists === undefined) {
-                            res.write("Dancer {0} created\r\n".format(dancers[index].name));
-                        }
-                    } else {
-                        rejectionReason = createDancersPromiseResult.reason();
-                        if (rejectionReason.handled === undefined) {
-                            res.write("Error while creating dancer {0}: {1}\r\n".format(dancers[index].name), rejectionReason);
-                        }
-                    }
-                });
-                db.close();
-                res.write("Finished saving dancers event information.\r\n");
-                res.end();
-            });
-        } else {
-            if (requestError) {
-                return error(res, "Cannot retrieve feature dancers Web page via GET request, got " + requestError, db);
-            }
-            return error(res, "Cannot retrieve feature dancers Web page via GET request, got status code: " + response.statusCode, db);
+            var result = await dancerStore.insertOne(dancer);
+            log(`Event information for ${dancer.name} created with ID ${result.insertedId}`);
         }
-    });
+        dancerStore.client.close();
+        
+        log(`Finished processing event information for ${dancers.length} dancers.`);
+        res.end();
+    } catch (e) {
+        log('Exception', e);
+        if (dancerStore) {
+            dancerStore.client.close();
+        }
+    }
 };

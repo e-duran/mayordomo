@@ -42,7 +42,9 @@ var MovieSchema = new mongoose.Schema({
         modifiedAt: Date,
         postProcessedAt: Date,
         acquired: { type: Boolean, 'default': false },
-        seen: { type: Boolean, 'default': false }
+        seen: { type: Boolean, 'default': false },
+        nextPostProcessingDate: Date,
+        remainingPostProcessingTimes: Date,
     });
 
 module.exports = mongoose.model('Movie', MovieSchema);

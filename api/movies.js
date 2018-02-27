@@ -1,102 +1,42 @@
-"use strict";
+'use strict';
 
 exports.register = function (app) {
-    var Movie = require('../schemas/movie.js'),
-        basePath = '/api/movies';
-
-    app.get(basePath, function (req, res) {
-        var db = global.getDB(res);
-        Movie = db.model('Movie');
-        Movie.find({ needsReview: false }).sort('-releasedDate').exec(function (error, movies) {
-            if (error) {
-                res.status(500).type('text').send('Error: ' + error);
-                return;
-            }
+    var basePath = '/api/movies';
+    
+    app.get(basePath, async function (req, res) {
+        var movieStore;
+        try {
+            movieStore = await global.getStore('movies');
+            var movies = await movieStore.find({ needsReview: false }).sort('releasedDate', -1).toArray();
+            movieStore.client.close();
             res.json(movies);
-        });
-    });
-
-    app.get(basePath + '/:id', function (req, res) {
-        var db = global.getDB(res);
-        Movie = db.model('Movie');
-        Movie.findById(req.params.id, function (error, movie) {
-            if (error) {
-                res.status(500).type('text').send('Error: ' + error);
-                return;
-            }
-            res.json(movie);
-        });
-    });
-
-    app.post(basePath + '/missing/', function (req, res) {
-        var db = global.getDB(res);
-        Movie = db.model('Movie');
-        var request = require('request'),
-            imdbId = req.body.imdbId;
-        if (!imdbId) {
-            res.status(400).type('text').send("Missing value for property 'imdbId' in request body");
+        } catch (e) {
+            global.jsonApiError(res, movieStore);
         }
-        Movie.findOne({ imdbId: imdbId }, function (error, movie) {
-            if (error) {
-                res.status(500).type('text').send("Error while checking if movie with IMDb ID {0} exists: {1}".format(imdbId, error));
-                return;
-            }
-            if (movie) {
-                res.status(409).type('text').send("A movie with IMDb ID {0} already exists".format(imdbId, error));
-                return;
-            }
-            request('http://www.omdbapi.com/?i={0}&plot=full&r=json'.format(imdbId), function (error, response, body) {
-                var movieInfo,
-                    newMovie,
-                    movieProcessor = require('../processors/movies');
-                if (error) {
-                    res.type('text').send('Error while requesting movie info: ' + error);
-                    return;
-                }
-                if (response.statusCode !== 200) {
-                    res.type('text').send('Error while requesting movie info, got status code: ' + response.statusCode);
-                    return;
-                }
-                movieInfo = JSON.parse(body);
-                if (movieInfo.Response) {
-                    newMovie = movieProcessor.getMovieDocument(Movie, movieInfo);
-                    Movie.create(newMovie, function (error, createdMovie) {
-                        if (error) {
-                            res.status(500).type('text').send("Error while creating movie: " + error);
-                            return;
-                        }
-                        res.json(createdMovie);
-                    });
-                } else {
-                    res.type('text').send("The Open Movie Database does not have information about the movie");
-                }
-            });
-        });
     });
 
-    app.put(basePath + '/:id', function (req, res) {
-        var db = global.getDB(res);
-        Movie = db.model('Movie');
-        delete req.body._id;
-        req.body.modifiedAt = new Date();
-        Movie.findByIdAndUpdate(req.params.id, { $set: req.body }, function (error, movie) {
-            if (error) {
-                res.status(500).send('Error: ' + error);
-                return;
+    app.put(basePath + '/:id', async function (req, res) {
+        var movieStore;
+        try {
+            var ObjectID = require('mongodb').ObjectID;
+            var movieID = new ObjectID(req.params.id);
+            var updated = {
+                isInteresting: req.body.isInteresting,
+                acquired: req.body.acquired,
+                seen: req.body.seen,
+                modifiedAt: new Date()
+            };
+            
+            movieStore = await global.getStore('movies');
+            var result = await movieStore.findOneAndUpdate({ _id: movieID }, { $set: updated }, { returnOriginal: false });
+            movieStore.client.close();
+            if (result.ok && result.value) {
+                res.json(result.value);
+            } else {
+                global.jsonApiError(res, null, null, 404, 'Not Found', `Cannot find movie with ID ${req.params.id}`, { 'parameter': 'id' });
             }
-            res.json(movie);
-        });
-    });
-
-    app.delete(basePath + '/:id', function (req, res) {
-        var db = global.getDB(res);
-        Movie = db.model('Movie');
-        Movie.findByIdAndRemove(req.params.id, function (error) {
-            if (error) {
-                res.status(500).send('Error: ' + error);
-                return;
-            }
-            res.end();
-        });
+        } catch (e) {
+            global.jsonApiError(res, movieStore, e);
+        }
     });
 };

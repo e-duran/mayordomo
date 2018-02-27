@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 exports.execute = async function (req, res) {
     try {
@@ -8,6 +8,6 @@ exports.execute = async function (req, res) {
             res.send('Configuration reloaded.');
         }
     } catch (err) {
-        res.send('Cannot reload configuration  - ' + err);
+        res.send('Cannot reload configuration  - ' + err.stack);
     }
 };

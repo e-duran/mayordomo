@@ -1,70 +1,61 @@
-"use strict";
+'use strict';
 
-exports.execute = function (req, res) {
-    var Promise = require("bluebird"),
-        request = Promise.promisifyAll(require("request")),
-        moment = require('moment-timezone'),
-        now = moment().tz('America/New_York');
-    global.getConfig().then(function (config) {
-        var stylistId = config.stylistId,
-            stylistName = config.stylistName,
-            Stylist = require('../schemas/stylist.js'),
-            today = moment(now).startOf('day'),
-            tomorrow = moment(today).add(1, 'day'),
-            lastTime,
-            stylistInfo,
-            stylistModel,
-            db = global.getDB();
+exports.execute = async function (req, res) {
+    res.type('text/plain; charset=utf-8');
     
-        res.type('text/plain; charset=utf-8');
+    var log = function (message, error) { global.log(res, message, error) };
+    var stylistStore = null;
+    
+    try {
+        if (!global.config) global.config = await global.getConfig(); 
+        var config = global.config;
+        var stylistId = config.stylistId;
+        var stylistName = config.stylistName;
+        var moment = require('moment-timezone');
+        var now = moment().tz('America/New_York');
+        
         if (now.hour() < 9 || now.hour() >= 21) {
-            res.write('Skipped processing due to out of business hours\n');
+            log('Skipped processing due to out of business hours');
             res.end();
             return;
         }
         
-        Stylist = db.model('Stylist');
-        request.getAsync(config.stylistInfoUrl)
-        .spread(function (response, body) {
-            if (response.statusCode !== 200) { return Promise.reject('Cannot get list of stylists: got {0} status code and response body \n\n{1}'.format(response.statusCode, body)); }
-            
-            stylistInfo = JSON.parse(body).find(function (stylist) {
-                return stylist.employeeID == stylistId;
-            });
-            if (stylistInfo) {
-                if (stylistInfo.name != stylistName) { res.write('Stylist {0} name is not {1}\n'.format(stylistId, stylistName)); }
-                lastTime = moment(now).add(moment.duration(stylistInfo.availableTime.replace(' hrs ', ':').replace(' mins', '')).add(1, 'minute')).startOf('minute');
-            }
-            if (lastTime) {
-                lastTime = lastTime.toDate();
-                return Stylist.findOne({ stylistId: stylistId, createdAt: { $gte: today, $lt: tomorrow } }).exec();
-            } else {
-                return Promise.reject('Stylist {0} is not available'.format(stylistId));
-            }
-        })
-        .then(function (existingStylist) {
-            if (existingStylist) {
-                existingStylist.lastTime = lastTime;
-                stylistModel = existingStylist;
-            } else {
-                stylistModel = new Stylist({ stylistId: stylistId, name: stylistInfo.name, lastTime: lastTime, createdAt: now.toDate() });
-            }
-            return Promise.promisify(stylistModel.save, stylistModel)();
-        })
-        .spread(function (stylist) {
-            res.write('Saved stylist {0} last time {1}'.format(stylist.stylistId, stylist.lastTime));
-        })
-        .catch(function (error) {
-            if (error.stack) {
-                res.write('Unhandled ' + error.stack);
-            } else {
-                res.write(error);
-            }
-        })
-        .finally(function () {
-            db.close();
-            res.write('\nEnd of processing.\n');
-            res.end();
+        var axios = require('axios');
+        var stylistResponse = await axios.get(config.stylistInfoUrl);
+        var stylistInfo = stylistResponse.data.find(function (stylist) {
+            return stylist.employeeID == stylistId;
         });
-    });
+        if (!stylistInfo) {
+            log(`Stylist ${stylistId} is not available.`);
+            res.end();
+            return;
+        }
+        if (stylistInfo.name != stylistName) {
+            log(`Name of stylist ${stylistId} is not ${stylistName}`);
+        }
+        
+        var lastTime = moment(now).add(moment.duration(stylistInfo.availableTime.replace(' hrs ', ':').replace(' mins', '')).add(1, 'minute')).startOf('minute');
+        var endOfShift = lastTime.format('h:mm:ss a');
+        var today = moment(now).startOf('day');
+        var tomorrow = moment(today).add(1, 'day');
+        
+        stylistStore = await global.getStore('stylists');
+        var stylist = await stylistStore.findOne({ stylistId: stylistId, createdAt: { $gte: today.toDate(), $lt: tomorrow.toDate() } });
+        var result;
+        if (stylist) {
+            result = await stylistStore.updateOne({ stylistId: stylistId}, { $set: { lastTime: lastTime.toDate(), modifiedAt: new Date() } });
+            log(`Updated stylist ${stylistInfo.name} (ID ${stylistId}) with end of shift at ${endOfShift}`);
+        } else {
+            stylist = { stylistId: stylistId, name: stylistInfo.name, lastTime: lastTime.toDate(), createdAt: now.toDate() };
+            result = await stylistStore.insertOne(stylist);
+            log(`Created entry ${result.insertedId} for stylist ${stylistInfo.name} (ID ${stylistId}) with end of shift at ${endOfShift}`);
+        }
+        stylistStore.client.close();
+        res.end();
+    } catch (e) {
+        log('Exception', e);
+        if (stylistStore) {
+            stylistStore.client.close();
+        }
+    }
 };

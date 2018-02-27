@@ -1,36 +1,44 @@
-"use strict";
+'use strict';
 
-exports.generate = function (req, res) {
-    var db = global.getDB(res),
-        Dancer = require('../schemas/dancer.js'),
-        Rss = require('rss'),
-        feed;
-    Dancer = db.model('Dancer');
-    res.type('xml');
-    global.getConfig().then(function(config) {
-        feed = new Rss({
-            title: 'Blush',
-            description: 'Calendar of events at Blush',
-            feed_url: '{0}/rss/blush'.format(config.publicHost),
-            site_url: 'http://www.blushexotic.com/girls/feature-dancers/',
-            image_url: 'http://www.blushexotic.com/files/2014/12/favico_blush_noborder_logo1.png',
+exports.generate = async function (req, res) {
+    var dancerStore = null;
+    
+    try {
+        if (!global.config) global.config = await global.getConfig(); 
+        var config = global.config;
+        
+        var Rss = require('rss');
+        var feed = new Rss({
+            title: config.dancersFeedTitle,
+            description: config.dancersFeedDescription,
+            feed_url: config.dancersFeedUrl,
+            site_url: config.dancersSiteUrl,
+            image_url: config.dancersFeedImageUrl,
             language: 'en',
             pubDate: new Date()
         });
-        Dancer.find().limit(20).sort('-createdAt').exec().then(function (dancers) {
-            db.close();
-            var i;
-            for (i = 0; i < dancers.length; i++) {
-                feed.item({
-                    title:  dancers[i].name,
-                    description: '<p><img src="{0}"></p><p>Event dates: {1}</p><p><a href="{2}">View full resolution photo</a></p>'.format(dancers[i].photoUrl, dancers[i].dates, dancers[i].fullResolutionPhotoUrl),
-                    url: dancers[i].url,
-                    guid: dancers[i].id,
-                    author: 'Mayordomo',
-                    date: dancers[i].createdAt
-                });
-            }
-            res.send(feed.xml({indent: true}));
-        });
-    });
+        
+        dancerStore = await global.getStore('dancers');
+        var dancers = await dancerStore.find().sort('createdAt', -1).limit(20).toArray();
+        dancerStore.client.close();
+        for (var i = 0; i < dancers.length; i++) {
+            feed.item({
+                title:  dancers[i].name,
+                description: `<p><img src="${dancers[i].photoUrl}"></p><p>Event dates: ${dancers[i].dates}</p>`,
+                url: dancers[i].url,
+                guid: dancers[i]._id.toString(),
+                author: 'Mayordomo',
+                date: dancers[i].createdAt
+            });
+        }
+        
+        res.type('xml');
+        res.send(feed.xml({ indent: true }));
+    } catch (e) {
+        res.type('text/plain; charset=utf-8');
+        global.log(res, 'Exception', e);
+        if (dancerStore) {
+            dancerStore.client.close();
+        }
+    }
 };

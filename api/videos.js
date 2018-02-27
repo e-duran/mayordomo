@@ -1,73 +1,72 @@
-"use strict";
+'use strict';
 
 exports.register = function (app) {
-    var Video = require('../schemas/video.js'),
-        basePath = '/api/videos';
+    var basePath = '/api/videos';
 
-    app.get(basePath, function (req, res) {
-        var db = global.getDB(res);
-        Video = db.model('Video');
-        Video.find().exec(function (error, videos) {
-            if (error) {
-                res.status(500).type('text').send('Error: ' + error);
-                return;
-            }
+    app.get(basePath, async function (req, res) {
+        var videoStore;
+        try {
+            videoStore = await global.getStore('videos');
+            var videos = await videoStore.find().toArray();
+            videoStore.client.close();
             res.json(videos);
-        });
+        } catch (e) {
+            global.jsonApiError(res, e, videoStore);
+        }
     });
 
-    app.post(basePath, function (req, res) {
-        var db = global.getDB(res);
-        Video = db.model('Video');
-        var channelId = req.body.channelId,
-            videoId = req.body.videoId;
-        if (!channelId) {
-            res.status(400).type('text').send("Missing value for property 'channelId' in request body");
-            return;
-        }
-        Video.findOne({ channel: channelId }, function (error, video) {
-            if (error) {
-                res.status(500).type('text').send("Error while checking if info for channel ID {0} exists: {1}".format(channelId, error));
+    app.post(basePath, async function (req, res) {
+        var videoStore;
+        try {
+            var channelId = req.body.channelId,
+                videoId = req.body.videoId;
+            if (!channelId) {
+                global.jsonApiError(res, null, null, 400, 'Missing data', `Missing value for property 'channelId' in request body`, { 'data': 'channelId' });
                 return;
             }
-            if (video) {
-                video.lastVideoSeen = videoId;
-                video.modifiedAt = new Date();
-                video.save(function (error, savedVideo) {
-                    if (error) {
-                        res.status(500).type('text').send("Error while updating channel: " + channelId);
-                        return;
-                    }
-                    res.json(savedVideo);
-                });
+            if (!videoId) {
+                global.jsonApiError(res, null, null, 400, 'Missing data', `Missing value for property 'videoId' in request body`, { 'data': 'videoId' });
                 return;
             }
             
-            var newVideo = new Video({
-                channel: channelId,
-                lastVideoSeen: videoId,
-                modifiedAt: new Date()
-            });
-            Video.create(newVideo, function (error, createdVideo) {
-                if (error) {
-                    res.status(500).type('text').send("Error while creating video: " + error);
-                    return;
-                }
-                res.json(createdVideo);
-            });
-        });
+            var result;
+            var filter = { channel: channelId };
+            videoStore = await global.getStore('videos');
+            var video = await videoStore.findOne(filter);
+            if (video) {
+                result = await videoStore.findOneAndUpdate(filter, { $set: { lastVideoSeen: videoId, modifiedAt: new Date() } }, { returnOriginal: false });
+                res.json(result.value);
+            } else {
+                video = {
+                    channel: channelId,
+                    lastVideoSeen: videoId,
+                    modifiedAt: new Date()
+                };
+                result = await videoStore.insertOne(video);
+                res.json(result.ops[0]);
+            }
+            videoStore.client.close();
+        } catch (e) {
+            global.jsonApiError(res, e, videoStore);
+        }
     });
     
-    app.get(basePath + '/playlists', function (req, res) {
-        global.getConfig().then(function (config) {
-            var playlists = config.videoPlaylists.split(',');
+    app.get(basePath + '/playlists', async function (req, res) {
+        try {
+            if (!global.config) global.config = await global.getConfig(); 
+            var playlists = global.config.videoPlaylists.split(',');
             res.json(playlists);
-        });
+        } catch (e) {
+            global.jsonApiError(res, e);
+        }
     });
     
-    app.get(basePath + '/clients/1', function (req, res) {
-        global.getConfig().then(function (config) {
-            res.json(config.videoClientId);
-        });
+    app.get(basePath + '/clients/1', async function (req, res) {
+        try {
+            if (!global.config) global.config = await global.getConfig(); 
+            res.json(global.config.videoClientId);
+        } catch (e) {
+            global.jsonApiError(res, e);
+        }
     });
 };

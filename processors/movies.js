@@ -1,217 +1,158 @@
-"use strict";
+'use strict';
 
-var getMovieDocument = function (Movie, movieInfo) {
-    var none = 'N/A',
-        previousYear = new Date().getFullYear() - 1,
-        movie,
-        runtimeInMinutes,
-        runtimeInMinutesEndIndex;
-    runtimeInMinutes = (movieInfo.Runtime === none || !movieInfo.Runtime) ? null : movieInfo.Runtime;
-    if (runtimeInMinutes !== null) {
-        runtimeInMinutesEndIndex = runtimeInMinutes.indexOf(' ');
-        if (runtimeInMinutesEndIndex > 0) {
-            runtimeInMinutes = Number(runtimeInMinutes.substring(0, runtimeInMinutesEndIndex));
-            if (isNaN(runtimeInMinutes)) {
-                runtimeInMinutes = null;
+exports.execute = async function (req, res) {
+    res.type('text/plain; charset=utf-8');
+    
+    var log = function (message, error) { global.log(res, message, error) };
+    var movieStore = null;
+    
+    try {
+        if (!global.config) global.config = await global.getConfig(); 
+        var config = global.config;
+        
+        var axios = require('axios');
+        var movieCalendar = await axios.get(config.movieCalendarUrl);
+        
+        var cheerio = require('cheerio');
+        var $ = cheerio.load(movieCalendar.data);
+        var movieTitles = [],
+            movieUrls = [];
+        $('h4.media-heading > a').each(function (i, anchor) {
+            movieUrls[i] = $(anchor).attr('href');
+            movieTitles[i] = $(anchor).text().trim();
+        });
+        if (movieUrls.length > 0) {
+            log(`Got list of ${movieUrls.length} movies opening this week`);
+        } else {
+            log('Error: Initial media-heading selector did not return any nodes');
+        }
+        
+        var movies = [];
+        for (let i = 0; i < movieUrls.length; i++) {
+            let movie = await getMovieFromPage(log, axios, cheerio, movieUrls[i], movieTitles[i]);
+            if (!movie) continue;
+            if (!movie.imdbId) {
+                movie = await getImdbId(log, axios, cheerio, movie);
             }
+            movies.push(movie);
+        }
+        
+        var moment = require('moment-timezone');
+        movieStore = await global.getStore('movies');
+        for (let i = 0; i < movies.length; i++) {
+            let movie = movies[i];
+            var action = 'created';
+            var result = null;
+            var filterByUrl = { movieInsiderUrl: movie.movieInsiderUrl };
+            var existingMovie = await movieStore.findOne(filterByUrl);
+            if (existingMovie) {
+                action = 'updated';
+                movie.modifiedAt = new Date();
+                movie.createdAt = existingMovie.createdAt;
+                movie._id = existingMovie._id;
+                result = await movieStore.replaceOne(filterByUrl, movie);
+            } else {
+                movie.createdAt = new Date();
+                movie.nextPostProcessingDate = moment().add(2, 'months').startOf('day').toDate();
+                movie.remainingPostProcessingTimes = 5;
+                result = await movieStore.insertOne(movie);
+            }
+            action = result.result.ok ? action : 'not stored';
+            var needsReview = movie.needsReview ? ' and its info needs to be reviewed' : '';
+            log(`Movie "${movie.title}" ${action}${needsReview}`);
+        }
+        movieStore.client.close();
+        
+        log(`End of processing.`);
+        res.end();
+    } catch (e) {
+        log('Exception', e);
+        if (movieStore) {
+            movieStore.client.close();
         }
     }
-    movie = new Movie({
-        title: movieInfo.title,
-        year: movieInfo.year === none ? null : Number(movieInfo.Year),
-        rated: movieInfo.rated.replace('Rated ', ''),
-        releasedDate: movieInfo.Released === none ? null : new Date(movieInfo.Released),
-        runtimeInMinutes: runtimeInMinutes,
-        genre: movieInfo.Genre,
-        director: movieInfo.Director,
-        writer: movieInfo.Writer,
-        actors: movieInfo.Actors,
-        plot: movieInfo.Plot,
-        language: movieInfo.Language,
-        country: movieInfo.Country,
-        awards: movieInfo.Awards,
-        poster: movieInfo.Poster === none ? '' : movieInfo.Poster,
-        imdbId: movieInfo.imdbID
-    });
-    if (isNaN(movie.year)) {
-        movie.year = null;
+};
+
+async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
+    var movieResult = null;
+    try {
+        var moviePageResponse = await axios.get(moviePageUrl);
+        var moviePageData = moviePageResponse.data;
+        var movie = {};
+        var $ = cheerio.load(moviePageData);
+
+        movie.movieInsiderUrl = moviePageUrl;
+        movie.title = movieTitle;
+        movie.poster = $('.img-thumbnail').attr('src').replace('/150/', '/600/');
+        movie.year = $('.year').text();
+        movie.rated = $('.mpaa').text();
+        movie.genre = '';
+        $('.white.tag').each(function(genre) {
+           movie.genre += $(this).text() + ', ';
+        });
+        if (movie.genre) { movie.genre = movie.genre.substr(0, movie.genre.length - 2); }
+        movie.duration = $("small[itemprop='duration']").text().trim();
+        $('.plot').children().remove();
+        movie.plot = $('.plot').text().trim();
+        movie.releasedDate = new Date($('h4.rs').next().text() + $('h4.rs').next().next().text());
+        movie.releaseScope = $('.hidden-xs.hidden-sm').last().text();
+        movie.actors = '';
+        $("b[itemprop='actor']").each(function(actor) {
+           movie.actors +=  $(this).text() + ', ';
+        });
+        if (movie.actors) { movie.actors = movie.actors.substr(0, movie.actors.length - 2); }
+        movie.director = $('.credits').eq(0).children('a').text().trim().replace('  ', ', ');
+        movie.writer = $('.credits').eq(1).children('a').text().trim().replace('  ', ', ');
+        
+        var imdbIdUrl = 'http://www.imdb.com/title/tt';
+        var imdbUrlStartIndex = moviePageData.indexOf(imdbIdUrl);
+        if (imdbUrlStartIndex > 0) {
+            var imdbIdStartIndex = imdbUrlStartIndex + imdbIdUrl.length - 2;
+            movie.imdbId = moviePageData.substring(imdbIdStartIndex, moviePageData.indexOf('/', imdbIdStartIndex));
+            movie.hasCanonicalImdbId = true;
+        }
+        movie.needsReview = false;
+        
+        if (isNaN(movie.year)) {
+            movie.year = null;
+        }
+        if (movie.releasedDate && !movie.releasedDate.isValid()) {
+            movie.releasedDate = null;
+        }
+        if (!movie.year || !movie.releasedDate || !movie.poster || !movie.plot || !movie.actors) {
+            movie.needsReview = true;
+        }
+        movieResult = movie;
+    } catch (e) {
+        log(`Error getting details for movie ${movieTitle}`);
+        throw e;
     }
-    if (movie.releasedDate && !movie.releasedDate.isValid()) {
-        movie.releasedDate = null;
-    }
-    if (movie.year === null || movie.releasedDate === null || movie.runtimeInMinutes === null || movie.year < previousYear || movie.imdbId.substring(0, 2).toLowerCase() !== 'tt' || movie.poster === '') {
-        movie.needsReview = true;
+    
+    return movieResult;
+}
+
+async function getImdbId(log, axios, cheerio, movie) {
+    if (!movie.year) return movie;
+    try {
+        var searchUrl = `https://www.imdb.com/find?q=${movie.title}&s=tt&ttype=ft&exact=true`;
+        var searchResponse = await axios.get(searchUrl);
+        var $ = cheerio.load(searchResponse.data);
+        var results = $('.result_text');
+        for (var i = 0; i < Math.min(results.length, 5); i++) {
+            var resultText = $(results[i]).text();
+            var year = resultText.substr(resultText.lastIndexOf('(') + 1, 4);
+            if (isNaN(year)) continue;
+            if (year >= (movie.year - 2)) {
+                var imdbUrl = $(results[i]).find('a').attr('href');
+                var start  = imdbUrl.indexOf('/tt') + 1;
+                movie.imdbId = imdbUrl.substring(start, imdbUrl.indexOf('/', start));
+                movie.hasCanonicalImdbId = false;
+                break;
+            }
+        }
+    } catch (e) {
+        log(`Error getting IMDb ID for movie ${movie.title}`);
+        throw e;
     }
     return movie;
-};
-
-function processMovieRequests(res, Promise, movies, Movie, movieTitles, movieRequestResults) {
-    var findMoviePromises = movieRequestResults.map(function (movieRequestResult, index) {
-        var errorMessage,
-            resultValue,
-            movieResponse,
-            movieResponseBody,
-            movieInfo,
-            rejectionReason;
-
-        if (movieRequestResult.isFulfilled()) {
-            resultValue = movieRequestResult.value();
-            movieResponse = resultValue[0];
-            movieResponseBody = resultValue[1];
-            if (movieResponse.statusCode !== 200) {
-                errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got status code: {1}\r\n'.format(movieTitles[index], movieResponse.statusCode);
-                res.write(errorMessage);
-                return Promise.reject(errorMessage);
-            }
-            movieInfo = JSON.parse(movieResponseBody);
-            if (movieInfo.Response === "True") {
-                movies[index] = getMovieDocument(Movie, movieInfo);
-                return Movie.findOne({ imdbId: movies[index].imdbId }).exec();
-            }
-            errorMessage = 'Movie information for "{0}" was not found at the Open Movie Database (OMDb)\r\n'.format(movieTitles[index]);
-            res.write(errorMessage);
-            return Promise.reject({ handled: true });
-        }
-        rejectionReason = movieRequestResult.reason();
-        if (rejectionReason.handled === undefined) {
-            errorMessage = 'Error while processing request for "{0}": }\r\n'.format(movieTitles[index]);
-            res.write(errorMessage);
-        }
-        return Promise.reject({ handled: true });
-    });
-    return findMoviePromises;
 }
-
-function saveMovies(res, Promise, movies, Movie, findMoviePromiseResults) {
-    var createMoviePromises = findMoviePromiseResults.map(function (findMovieResult, index) {
-        var errorMessage,
-            rejectionReason,
-            movieExistsInStore,
-            movie = movies[index];
-        if (findMovieResult.isFulfilled()) {
-            movieExistsInStore = findMovieResult.value() !== null;
-            if (movieExistsInStore) {
-                errorMessage = 'Movie "{0}" already exists\r\n'.format(movie.title);
-                res.write(errorMessage);
-                return Promise.resolve({ movieExists: true });
-            }
-            res.write('Movie "{0}" saved\r\n'.format(movie.title));
-            return Movie.create(movie);
-        }
-        rejectionReason = findMovieResult.reason();
-        if (rejectionReason.handled === undefined) {
-            errorMessage = 'Error while finding movie "{0}": {1}\r\n'.format(movie.title, rejectionReason);
-            res.write(errorMessage);
-        }
-        return Promise.reject({ handled: true });
-    });
-    return createMoviePromises;
-}
-
-function processInsiderMovieRequests(res, movieTitles, insiderMoviesUrls, movieRequestResults) {
-    var findMoviePromises = movieRequestResults.map(function (movieRequestResult, index) {
-        var errorMessage,
-            resultValue,
-            movieResponse,
-            movieResponseBody,
-            imdbIdUrl = 'http://www.imdb.com/title/tt',
-            imdbUrlStartIndex,
-            imdbIdStartIndex;
-
-        if (movieRequestResult.isFulfilled()) {
-            resultValue = movieRequestResult.value();
-            movieResponse = resultValue[0];
-            movieResponseBody = resultValue[1];
-            if (movieResponse.statusCode !== 200) {
-                errorMessage = 'Cannot retrieve movie information from Movie Insider site for "{0}" via GET request, got status code: {1}\r\n'.format(movieTitles[index], movieResponse.statusCode);
-                res.write(errorMessage);
-                return null;
-            }
-            imdbUrlStartIndex = movieResponseBody.indexOf(imdbIdUrl);
-            if (imdbUrlStartIndex < 0) {
-                errorMessage = 'Cannot find ID in IMDb URL for "{0}" in content of Movie Insider Web page {1}\r\n'.format(movieTitles[index], insiderMoviesUrls[index]);
-                res.write(errorMessage);
-                return null;
-            }
-            imdbIdStartIndex = imdbUrlStartIndex + imdbIdUrl.length;
-            return movieResponseBody.substring(imdbIdStartIndex, movieResponseBody.indexOf('/', imdbIdStartIndex));
-        }
-        errorMessage = 'Cannot retrieve movie information for "{0}" via GET request, got: {1}\r\n'.format(movieTitles[index], movieRequestResult.reason());
-        res.write(errorMessage);
-        return null;
-    });
-    return findMoviePromises;
-}
-
-function processMovieCalendar(res, request, Promise, calendarResponse, calendarBody) {
-    var Movie = require('../schemas/movie.js'),
-        cheerio = require('cheerio'),
-        movieInfo = 'https://moviesapi.com/m.php?i={0}&type=movie&r=json',
-        movies = [],
-        movieTitles = [],
-        insiderMoviesUrls = [],
-        insiderMoviesRequests,
-        $;
-
-    if (calendarResponse.statusCode !== 200) {
-        res.write("Cannot retrieve movies via GET request, got status code: " + calendarResponse.statusCode);
-        res.end();
-        return;
-    }
-    res.write("Retrieved movies via GET request\r\n");
-    $ = cheerio.load(calendarBody);
-    $("h4.media-heading > a").each(function (i, anchor) {
-        insiderMoviesUrls[i] = $(anchor).attr("href");
-        movieTitles[i] = $(anchor).text().trim();
-    });
-
-    insiderMoviesRequests = insiderMoviesUrls.map(function (url) {
-        return request(url);
-    });
-    Promise.settle(insiderMoviesRequests).then(function (insiderMovieRequestResults) {
-        var imdbIds = processInsiderMovieRequests(res, movieTitles, insiderMoviesUrls, insiderMovieRequestResults);
-        return imdbIds.map(function (imdbId) {
-            return imdbId === null ? Promise.reject({ handled: true }) : request(movieInfo.format(imdbId));
-        });
-    }).settle().then(function (movieRequestResults) {
-        return processMovieRequests(res, Promise, movies, Movie, movieTitles, movieRequestResults);
-    }).settle().then(function (findMoviePromiseResults) {
-        return saveMovies(res, Promise, movies, Movie, findMoviePromiseResults);
-    }).settle().then(function (createMoviePromisesResults) {
-        createMoviePromisesResults.map(function (createMoviePromisesResult, index) {
-            var resultValue,
-                rejectionReason,
-                needsReview;
-            if (createMoviePromisesResult.isFulfilled()) {
-                resultValue = createMoviePromisesResult.value();
-                if (resultValue.movieExists === undefined) {
-                    needsReview = movies[index].needsReview ? ' but its info needs to be reviewed' : '';
-                    res.write('Movie "{0}" created{1}\r\n'.format(movies[index].title, needsReview));
-                }
-            } else {
-                rejectionReason = createMoviePromisesResult.reason();
-                if (rejectionReason.handled === undefined) {
-                    res.write('Error while creating movie "{0}": {1}\r\n'.format(movies[index].title), rejectionReason);
-                }
-            }
-            res.write("Finished processing movie calendar\r\n");
-            res.end();
-        });
-    }).catch(function (error) {
-        res.write("Unhandled " + error);
-        res.end();
-    });
-}
-
-exports.execute = function (req, res) {
-    var Promise = require("bluebird"),
-        request = Promise.promisify(require('request'));
-    res.type('text');
-    request('http://www.movieinsider.com/movies/this-week/').spread(function (moviesResponse, moviesBody) {
-        processMovieCalendar(res, request, Promise, moviesResponse, moviesBody);
-    }).catch(function (moviesRequestError) {
-        res.write("Cannot retrieve movies via GET request, got " + moviesRequestError);
-        res.end();
-    });
-};
-exports.getMovieDocument = getMovieDocument;
