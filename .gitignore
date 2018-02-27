@@ -27,7 +27,8 @@ node_modules
 # Mongo-related files
 data
 mongod
+backup
 
 # Cloud9 files
 .c9
-config/c9.js
+
