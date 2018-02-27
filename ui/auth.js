@@ -1,58 +1,71 @@
-// The client ID is obtained from the {{ Google Cloud Console }}
-// at {{ https://cloud.google.com/console }}.
-// If you run this code from a server other than http://localhost,
-// you need to register your own client ID.
-var OAUTH2_CLIENT_ID = '';
-var OAUTH2_SCOPES = [
-  'https://www.googleapis.com/auth/youtube'
-];
+/* global $, gapi, handleAPILoaded */
+var GoogleAuth;
+var SCOPE = 'https://www.googleapis.com/auth/youtube';
+var oauth2ClientId;
 
-$.ajax({
-  url: '/api/videos/clients/1'
-})
-.done(function(clientId) {
-  OAUTH2_CLIENT_ID = clientId;
-});
-
-// Upon loading, the Google APIs JS client automatically invokes this callback.
-googleApiClientReady = function() {
-  gapi.auth.init(function() {
-    window.setTimeout(checkAuth, 1);
+function handleClientLoad() {
+  $.ajax({
+    url: '/api/videos/clients/1'
+  })
+  .done(function(clientId) {
+    oauth2ClientId = clientId;
+    // Load the API's client and auth2 modules.
+    // Call the initClient function after the modules load.
+    gapi.load('client:auth2', initClient);
   });
 }
 
-// Attempt the immediate OAuth 2.0 client flow as soon as the page loads.
-// If the currently logged-in Google Account has previously authorized
-// the client specified as the OAUTH2_CLIENT_ID, then the authorization
-// succeeds with no user intervention. Otherwise, it fails and the
-// user interface that prompts for authorization needs to display.
-function checkAuth() {
-  gapi.auth.authorize({
-    client_id: OAUTH2_CLIENT_ID,
-    scope: OAUTH2_SCOPES,
-    immediate: true
-  }, handleAuthResult);
+function initClient() {
+  // Retrieve the discovery document for version 3 of Google Drive API.
+  // In practice, your app can retrieve one or more discovery documents.
+  var discoveryUrl = 'https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest';
+
+  // Initialize the gapi.client object, which app uses to make API requests.
+  // Get API key and client ID from API Console.
+  // 'scope' field specifies space-delimited list of access scopes.
+  gapi.client.init({
+      'discoveryDocs': [discoveryUrl],
+      'clientId': oauth2ClientId,
+      'scope': SCOPE
+  }).then(function () {
+    GoogleAuth = gapi.auth2.getAuthInstance();
+
+    // Listen for sign-in state changes.
+    GoogleAuth.isSignedIn.listen(updateSigninStatus);
+
+    // Handle initial sign-in state. (Determine if user is already signed in.)
+    setSigninStatus();
+
+    // Call handleAuthClick function when user clicks on
+    //      "Sign In/Authorize" button.
+    $('#login-link').click(function() {
+      handleAuthClick();
+    }); 
+  });
 }
 
-// Handle the result of a gapi.auth.authorize() call.
-function handleAuthResult(authResult) {
-  if (authResult && !authResult.error) {
-    // Authorization was successful. Hide authorization prompts and show
-    // content that should be visible after authorization succeeds.
+function handleAuthClick() {
+  if (GoogleAuth.isSignedIn.get()) {
+    // User is authorized and has clicked 'Sign out' button.
+    GoogleAuth.signOut();
+  } else {
+    // User is not signed in. Start Google auth flow.
+    GoogleAuth.signIn();
+  }
+}
+
+function setSigninStatus() {
+  var user = GoogleAuth.currentUser.get();
+  var isAuthorized = user.hasGrantedScopes(SCOPE);
+  if (isAuthorized) {
     $('.pre-auth').hide();
     $('.post-auth').show();
     loadAPIClientInterfaces();
-  } else {
-    // Make the #login-link clickable. Attempt a non-immediate OAuth 2.0
-    // client flow. The current function is called when that flow completes.
-    $('#login-link').click(function() {
-      gapi.auth.authorize({
-        client_id: OAUTH2_CLIENT_ID,
-        scope: OAUTH2_SCOPES,
-        immediate: false
-        }, handleAuthResult);
-    });
   }
+}
+
+function updateSigninStatus() {
+  setSigninStatus();
 }
 
 // Load the client interfaces for the YouTube Analytics and Data APIs, which
