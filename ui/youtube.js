@@ -55,7 +55,6 @@ function requestVideoPlaylist(playlistId, pageToken) {
     var playlistItems = response.result.items;
     if (playlistItems) {
       $.each(playlistItems, function(index, item) {
-          if (index > 2) return;
         getVideosByBookmarkedVideoId(item.contentDetails.videoId);
       });
     } else {
