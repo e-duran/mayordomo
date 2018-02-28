@@ -55,6 +55,7 @@ function requestVideoPlaylist(playlistId, pageToken) {
     var playlistItems = response.result.items;
     if (playlistItems) {
       $.each(playlistItems, function(index, item) {
+          if (index > 2) return;
         getVideosByBookmarkedVideoId(item.contentDetails.videoId);
       });
     } else {
@@ -144,6 +145,7 @@ function displayResult(videoId, snippet, row) {
 					<div><span class="metadata">${dateString} <span id="${videoId}-duration" class="vid-duration"></span></span>
 					    <i class="fas fa-check-circle toolbar" ${markHandler}></i>
 					    <i class="fas fa-info-circle tool" ${infoHandler} title="Info"></i>
+					    <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank"><i class="fas fa-external-link-alt tool"></i></a>
 					</div>
 				</td>`;
   

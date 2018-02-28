@@ -52,3 +52,15 @@ table td {
 	font-family: 'Roboto';
 	font-size: 12px;
 }
+
+a:link {
+	color: black;
+}
+
+a:visited {
+	color: #30343a;
+}
+
+a:active {
+	color: #34537f;
+}
