@@ -216,3 +216,171 @@ function nextPage() {
 function previousPage() {
   requestVideoPlaylist(lastPlaylistId, prevPageToken);
 }
+
+function initAddVideoDialog() {
+    var dialog, form,
+	  videoId = $( '#videoIdToSearch'),
+      notes = $( "#notes" ),
+      allFields = $( [] ).add( notes ).add( videoId ),
+      tips = $( ".validateTips" );
+ 
+    function updateTips( t ) {
+      tips
+        .text( t )
+        .addClass( "ui-state-highlight" );
+      setTimeout(function() {
+        tips.removeClass( "ui-state-highlight", 1500 );
+      }, 500 );
+    }
+ 
+    function checkLength( o, n, min, max ) {
+      if ( o.val().length > max || o.val().length < min ) {
+        o.addClass( "ui-state-error" );
+        updateTips( "Length of " + n + " must be between " +
+          min + " and " + max + "." );
+        return false;
+      } else {
+        return true;
+      }
+    }
+ 
+    function validateVideoToAdd() {
+      var valid = true;
+      allFields.removeClass( "ui-state-error" );
+ 
+      valid = valid && checkLength( videoId, "video ID", 1, 16 );
+	  valid = valid && checkLength( notes, "notes", 1, 150 );
+ 
+      if ( valid ) {
+        addVideoToFavorites(videoId.val(), notes.text());
+        dialog.dialog( "close" );
+      }
+      return valid;
+    }
+ 
+    dialog = $( "#dialog-form" ).dialog({
+      autoOpen: false,
+      height: 400,
+      width: 350,
+      modal: true,
+      buttons: {
+        "Add Video To Favorites": validateVideoToAdd,
+        Cancel: function() {
+          dialog.dialog( "close" );
+        }
+      },
+      close: function() {
+        form[ 0 ].reset();
+        allFields.removeClass( "ui-state-error" );
+      }
+    });
+ 
+    form = dialog.find( "form" ).on( "submit", function( event ) {
+      event.preventDefault();
+      validateVideoToAdd();
+    });
+ 
+    $( "#addVideo" ).on( "click", function() {
+      dialog.dialog( "open" );
+    });
+	$( "#searchVideoIcon" ).on( "click", function() {
+        if ( checkLength( videoId, "video ID", 1, 16 ) ) {
+            searchVideo( videoId.val(), notes );
+        }
+	});
+}
+
+function searchVideo(videoId, $notes) {
+    var requestOptions = {
+        id: videoId,
+        part: 'snippet',
+        fields: 'items(snippet(channelId,channelTitle))'
+    };
+    var request = gapi.client.youtube.videos.list(requestOptions);
+    request.execute(function(response) {
+        var draft = `Channel: ${response.result.items[0].snippet.channelTitle}\r\n`;
+        draft += `https://www.youtube.com/channel/${response.result.items[0].snippet.channelId}/videos\r\n`;
+        $notes.text(draft);
+        $notes.focus();
+    });
+}
+
+function createResource(properties) {
+    var resource = {};
+    var normalizedProps = properties;
+    for (var p in properties) {
+      var value = properties[p];
+      if (p && p.substr(-2, 2) == '[]') {
+        var adjustedName = p.replace('[]', '');
+        if (value) {
+          normalizedProps[adjustedName] = value.split(',');
+        }
+        delete normalizedProps[p];
+      }
+    }
+    for (var p in normalizedProps) {
+      // Leave properties that don't have values out of inserted resource.
+      if (normalizedProps.hasOwnProperty(p) && normalizedProps[p]) {
+        var propArray = p.split('.');
+        var ref = resource;
+        for (var pa = 0; pa < propArray.length; pa++) {
+          var key = propArray[pa];
+          if (pa == propArray.length - 1) {
+            ref[key] = normalizedProps[p];
+          } else {
+            ref = ref[key] = ref[key] || {};
+          }
+        }
+      }
+    }
+    return resource;
+}
+
+function removeEmptyParams(params) {
+    for (var p in params) {
+      if (!params[p] || params[p] == 'undefined') {
+        delete params[p];
+      }
+    }
+    return params;
+}
+
+function executeRequest(request) {
+    request.execute(function(response) {
+      console.log(response);
+    });
+}
+
+function buildApiRequest(requestMethod, path, params, properties) {
+    params = removeEmptyParams(params);
+    var request;
+    if (properties) {
+      var resource = createResource(properties);
+      request = gapi.client.request({
+          'body': resource,
+          'method': requestMethod,
+          'path': path,
+          'params': params
+      });
+    } else {
+      request = gapi.client.request({
+          'method': requestMethod,
+          'path': path,
+          'params': params
+      });
+    }
+    executeRequest(request);
+}
+
+function addVideoToFavorites(videoId, notes) {
+    buildApiRequest('POST',
+        '/youtube/v3/playlistItems',
+        { 'part': 'snippet,contentDetails' },
+        { 'snippet.playlistId': lastPlaylistId,
+          'snippet.resourceId.kind': 'youtube#video',
+          'snippet.resourceId.videoId': videoId,
+          'contentDetails.note': notes
+        });
+}
+
+initAddVideoDialog();
