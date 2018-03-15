@@ -187,18 +187,15 @@ function getVideoDuration(videoId) {
     var request = gapi.client.youtube.videos.list(requestOptions);
     request.execute(function(response) {
         var duration = response.result.items[0].contentDetails.duration;
-        duration = duration.substr(2, duration.length - 3);
+        duration = duration.substr(2);
         var minuteMarker = duration.indexOf('M');
-        if (minuteMarker == -1) {
-            duration += ':00'; 
-        } else {
-            duration = duration.replace('M', ':');
-            var seconds = duration.substring(minuteMarker + 1);
-            if (seconds < 10) {
-                duration = duration.substring(0, minuteMarker) + ':0' + seconds;
-            }
+        var minutes = minuteMarker == -1 ? '00' : duration.substring(0, minuteMarker); 
+        duration = duration.replace('S', '');
+        var seconds = duration.substring(minuteMarker + 1);
+        if (seconds < 10) {
+            seconds = '0' + seconds;
         }
-        $('#' + videoId + '-duration').text(`(${duration})`);
+        $('#' + videoId + '-duration').text(`(${minutes}:${seconds})`);
     });
 }
 
