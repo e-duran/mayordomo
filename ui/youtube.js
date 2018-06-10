@@ -191,7 +191,7 @@ function getVideoDuration(videoId) {
         var minuteMarker = duration.indexOf('M');
         var minutes = minuteMarker == -1 ? '00' : duration.substring(0, minuteMarker); 
         duration = duration.replace('S', '');
-        var seconds = duration.substring(minuteMarker + 1);
+        var seconds = duration.substring(minuteMarker + 1) | 0;
         if (seconds < 10) {
             seconds = '0' + seconds;
         }
