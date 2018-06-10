@@ -134,7 +134,7 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
 async function getImdbId(log, axios, cheerio, movie) {
     if (!movie.year) return movie;
     try {
-        var searchUrl = `https://www.imdb.com/find?q=${movie.title}&s=tt&ttype=ft&exact=true`;
+        var searchUrl = `https://www.imdb.com/find?q=${encodeURI(movie.title)}&s=tt&ttype=ft&exact=true`;
         var searchResponse = await axios.get(searchUrl);
         var $ = cheerio.load(searchResponse.data);
         var results = $('.result_text');
