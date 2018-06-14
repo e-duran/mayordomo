@@ -41,7 +41,7 @@ exports.execute = async function (req, res) {
                     }
                 });
             } else {
-                log(`Stock ${quote} is under the limit ${priceLimit}, nothing to see.`);
+                log(`Stock ${quote} is at ${price}, which is under the limit ${priceLimit}, no further action taken.`);
             }
         }
         res.end();
