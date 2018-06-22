@@ -49,6 +49,8 @@ exports.execute = async function (req, res) {
                 action = 'updated';
                 movie.modifiedAt = new Date();
                 movie.createdAt = existingMovie.createdAt;
+                movie.nextPostProcessingDate = existingMovie.nextPostProcessingDate;
+                movie.remainingPostProcessingTimes = existingMovie.remainingPostProcessingTimes;
                 movie._id = existingMovie._id;
                 result = await movieStore.replaceOne(filterByUrl, movie);
             } else {
@@ -112,6 +114,8 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
             movie.hasCanonicalImdbId = true;
         }
         movie.needsReview = false;
+        movie.acquired = false;
+        movie.seen = false;
         
         if (isNaN(movie.year)) {
             movie.year = null;
