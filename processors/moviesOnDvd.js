@@ -46,24 +46,28 @@ exports.execute = async function (req, res) {
         var movies = await movieStore.find({ needsReview: false, nextPostProcessingDate: moment().startOf('day').toDate() }).toArray();
         var action;
         for (var i = 0; i < movies.length; i++) {
-            var movie = movies[i];
-            var movieApiUrl = config.cinesiftUrl.format(encodeURI(movie.title), movie.year, movie.year);
-            var movieResponse = await axios.get(movieApiUrl);
-            var movieInfo = JSON.parse(movieResponse.data);
-            if (movieInfo.length > 0) {
-                if (movieInfo.length > 1) { log(`WARNING: Movie API returned multiple matches for "${movie.title}" (${movie.year})`); }
-                movieInfo = movieInfo[0];
-                updateMovie(movie, movieInfo, config);
-                action = 'post-processed';
-            } else {
-                action = 'not post-processed';
+            try {
+                var movie = movies[i];
+                var movieApiUrl = config.cinesiftUrl.format(encodeURI(movie.title), movie.year, movie.year);
+                var movieResponse = await axios.get(movieApiUrl);
+                var movieInfo = JSON.parse(movieResponse.data);
+                if (movieInfo.length > 0) {
+                    if (movieInfo.length > 1) { log(`WARNING: Movie API returned multiple matches for "${movie.title}" (${movie.year})`); }
+                    movieInfo = movieInfo[0];
+                    updateMovie(movie, movieInfo, config);
+                    action = 'post-processed';
+                } else {
+                    action = 'not post-processed';
+                }
+                movie.remainingPostProcessingTimes--;
+                movie.nextPostProcessingDate = movie.remainingPostProcessingTimes ? moment().add(1, 'months').startOf('day').toDate() : null;
+                var result = await movieStore.replaceOne({ _id: movie._id }, movie);
+                action += ' and ' + (result.modifiedCount ? 'saved' : 'not saved');
+                var times = movie.remainingPostProcessingTimes ? movie.remainingPostProcessingTimes : 'no';
+                log(`Movie "${movie.title}" was ${action} with ${times} remaining rounds.`);
+            } catch (e) {
+                log(`Error post-processing movie ${movies[i].title}`, e);
             }
-            movie.remainingPostProcessingTimes--;
-            movie.nextPostProcessingDate = movie.remainingPostProcessingTimes ? moment().add(1, 'months').startOf('day').toDate() : null;
-            var result = await movieStore.replaceOne({ _id: movie._id }, movie);
-            action += ' and ' + (result.modifiedCount ? 'saved' : 'not saved');
-            var times = movie.remainingPostProcessingTimes ? movie.remainingPostProcessingTimes : 'no';
-            log(`Movie "${movie.title}" was ${action} with ${times} remaining rounds.`);
         }
         movieStore.client.close();
         log(`Finished post-processing of ${movies.length} movies.`);
