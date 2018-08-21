@@ -17,7 +17,7 @@ exports.execute = async function (req, res) {
         var $ = cheerio.load(movieCalendar.data);
         var movieTitles = [],
             movieUrls = [];
-        $('h4.media-heading > a').each(function (i, anchor) {
+        $('h3 > a').each(function (i, anchor) {
             movieUrls[i] = $(anchor).attr('href');
             movieTitles[i] = $(anchor).text().trim();
         });
