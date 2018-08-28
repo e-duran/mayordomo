@@ -30,11 +30,13 @@ global.getConfig = async function () {
     configStore.client.close();
     return config;
 };
-global.log = function (res, message, error) {
+global.log = function (res, message, error, noEnd) {
     res.write(message);
     if (error) {
         res.write(' - ' + (error.stack ? error.stack : error));
-        res.end();
+        if (!noEnd) {
+            res.end();
+        }
     } else {
         res.write('\r\n');
     }

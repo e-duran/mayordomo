@@ -33,7 +33,7 @@ function updateMovie(movie, movieInfo, config) {
 exports.execute = async function (req, res) {
     res.type('text/plain; charset=utf-8');
     
-    var log = function (message, error) { global.log(res, message, error) };
+    var log = function (message, error, noEnd) { global.log(res, message, error, noEnd) };
     var movieStore = null;
     
     try {
@@ -41,6 +41,9 @@ exports.execute = async function (req, res) {
         var config = global.config;
         
         var axios = require('axios');
+        axios.defaults.headers['Referer'] = config.moviesPostProcessorReferer;
+        axios.defaults.headers['User-Agent'] = config.moviesPostProcessorUserAgent;
+        axios.defaults.headers['Response'] = config.moviesPostProcessorResponse;
         var moment = require('moment-timezone');
         movieStore = await global.getStore('movies');
         var movies = await movieStore.find({ needsReview: false, nextPostProcessingDate: moment().startOf('day').toDate() }).toArray();
@@ -66,7 +69,7 @@ exports.execute = async function (req, res) {
                 var times = movie.remainingPostProcessingTimes ? movie.remainingPostProcessingTimes : 'no';
                 log(`Movie "${movie.title}" was ${action} with ${times} remaining rounds.`);
             } catch (e) {
-                log(`Error post-processing movie ${movies[i].title}`, e);
+                log(`Error post-processing movie ${movies[i].title}`, e, true);
             }
         }
         movieStore.client.close();
