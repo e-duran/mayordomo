@@ -22,7 +22,7 @@ exports.generate = async function (req, res) {
             pubDate: new Date()
         });
         
-        var attributes = ['Rated', 'Released', 'Runtime', 'Genre', 'Director', 'Writer', 'Actors', 'Plot', 'Country', 'Awards'];
+        var attributes = ['Rated', 'Released', 'Release type', 'Runtime', 'Genre', 'Director', 'Writer', 'Actors', 'Plot'];
         var content = '<p><img src="{0}"></p>';
         var attributesOffset = 1;
         for (let i = 0; i < attributes.length; i++) {
@@ -36,8 +36,8 @@ exports.generate = async function (req, res) {
             var movie = movies[i];
             var markAsInterestingUrl = `${config.publicHost}/processors/markAsInteresting/${movie._id}`;
             var description = content.format(movie.poster || config.missingPosterUrl, na(movie.rated), movie.releasedDate ? movie.releasedDate.toDateString().substring(4) : 'N/A', 
-                                         movie.runtimeInMinutes ? (movie.runtimeInMinutes + ' minutes') : na(movie.duration), 
-                                         na(movie.genre), na(movie.director), na(movie.writer), na(movie.actors), na(movie.plot), na(movie.country), na(movie.awards));
+                                         na(movie.releaseScope), movie.runtimeInMinutes ? (movie.runtimeInMinutes + ' minutes') : na(movie.duration), 
+                                         na(movie.genre), na(movie.director), na(movie.writer), na(movie.actors), na(movie.plot));
             if (movie.needsReview) {
                 description += '<p><strong>Some information of this movie needs to be reviewed.</strong>';
             } else {
