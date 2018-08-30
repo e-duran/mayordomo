@@ -48,12 +48,13 @@ exports.execute = async function (req, res) {
         movieStore = await global.getStore('movies');
         var movies = await movieStore.find({ needsReview: false, nextPostProcessingDate: moment().startOf('day').toDate() }).toArray();
         var action;
-        for (var i = 0; i < movies.length; i++) {
+        for (var i = 0; i < 2; i++) {
             try {
                 var movie = movies[i];
                 var movieApiUrl = config.cinesiftUrl.format(encodeURI(movie.title), movie.year, movie.year);
                 var movieResponse = await axios.get(movieApiUrl);
-                console.log(JSON.stringify(movieResponse, null, 2));
+                var te = JSON.stringify({data: movieResponse.data, headers: movieResponse.headers, config: movieResponse.config}, null, 2);
+                log(`Response data for movie "${movies[i].title}": ${te}`);
                 var movieInfo = JSON.parse(movieResponse.data);
                 if (movieInfo.length > 0) {
                     if (movieInfo.length > 1) { log(`WARNING: Movie API returned multiple matches for "${movie.title}" (${movie.year})`); }
