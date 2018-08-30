@@ -34,7 +34,9 @@ global.log = function (res, message, error, noEnd) {
     res.write(message);
     if (error) {
         res.write(' - ' + (error.stack ? error.stack : error));
-        if (!noEnd) {
+        if (noEnd) {
+            res.write('\r\n');
+        } else {
             res.end();
         }
     } else {

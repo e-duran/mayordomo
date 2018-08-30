@@ -44,6 +44,7 @@ exports.execute = async function (req, res) {
         axios.defaults.headers['Referer'] = config.moviesPostProcessorReferer;
         axios.defaults.headers['User-Agent'] = config.moviesPostProcessorUserAgent;
         axios.defaults.headers['Response'] = config.moviesPostProcessorResponse;
+        log('Response content type: ' + config.moviesPostProcessorResponse);
         var moment = require('moment-timezone');
         movieStore = await global.getStore('movies');
         var movies = await movieStore.find({ needsReview: false, nextPostProcessingDate: moment().startOf('day').toDate() }).toArray();
