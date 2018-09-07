@@ -36,7 +36,6 @@ exports.execute = async function (req, res) {
                 };
                 mailgun.messages().send(mail, function (error, body) {
                     if (error) {
-                        console.log(error);
                         log('Error while sending mail', error);
                     }
                 });

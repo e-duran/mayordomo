@@ -51,6 +51,10 @@
     <div class="col-xs-3"><strong>Rated:</strong></div>
     <div class="col-xs-9">{{ movie.rated || 'N/A' }}</div>
   </div>
+  <div ng-if="movie.comboScore" class="row">
+    <div class="col-xs-3"><strong>Combo score:</strong></div>
+    <div class="col-xs-9">{{ movie.comboScore }}</div>
+  </div>
   <div ng-if="movie.imdbId" class="row">
     <div class="col-xs-3"><strong>IMDb Rating:</strong></div>
     <div class="col-xs-9">
@@ -69,18 +73,24 @@
       {{ movie.tomatoMeter }}% of {{ movie.tomatoReviews.toLocaleString() }} Rotten Tomatoes critics gave it a positive review 
       ({{ movie.tomatoFresh }} fresh, {{ movie.tomatoRotten }} rotten) with an average rating of {{ movie.tomatoRating }} / 10
     </div>
-    <div ng-if="!movie.tomatoRating" class="col-xs-9">N/A</div>
+    <div ng-if="!movie.tomatoRating && movie.tomatoMeter" class="col-xs-9">{{ movie.tomatoMeter }}% of {{ movie.tomatoReviews.toLocaleString() }} Rotten Tomatoes critics gave it a positive review</div>
+    <div ng-if="!movie.tomatoRating && !movie.tomatoMeter" class="col-xs-9">N/A</div>
   </div>
   <div class="row">
     <div class="col-xs-3"><strong>RT User Rating:</strong></div>
-    <div ng-if="movie.tomatoRating" class="col-xs-9">
+    <div ng-if="movie.tomatoUserRating" class="col-xs-9">
       {{ movie.tomatoUserMeter }}% of {{ movie.tomatoUserReviews.toLocaleString() }} Rotten Tomatoes users liked it and gave it an average rating of {{ movie.tomatoUserRating }} / 5
     </div>
-    <div ng-if="!movie.tomatoRating" class="col-xs-9">N/A</div>
+    <div ng-if="!movie.tomatoUserRating && movie.tomatoUserMeter" class="col-xs-9">{{ movie.tomatoUserMeter }}% of {{ movie.tomatoUserReviews.toLocaleString() }} Rotten Tomatoes users liked it</div>
+    <div ng-if="!movie.tomatoRating && !movie.tomatoUserMeter" class="col-xs-9">N/A</div>
   </div>
   <div class="row">
     <div class="col-xs-3"><strong>Metascore:</strong></div>
     <div class="col-xs-9">{{ movie.metascore || 'N/A' }}</div>
+  </div>
+  <div ng-if="movie.letterboxdScore" class="row">
+    <div class="col-xs-3"><strong>Letterboxd score:</strong></div>
+    <div class="col-xs-9">{{ movie.letterboxdScore }} based on {{ movie.letterboxdVotes.toLocaleString() }} ratings</div>
   </div>
   <div class="row">
     <div class="col-xs-3"><strong>Released:</strong></div>

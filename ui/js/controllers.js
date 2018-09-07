@@ -77,29 +77,50 @@ mayordomoControllers.controller('MovieListCtrl', ['$scope', 'Movie', 'uiGridCons
     $scope.keyedMovies = {};
     $scope.movies = Movie.query(function (movies) {
       movies.forEach(function (movie) {
-        var rating = '';
-        var ratingIcon = 'hand-left';
+        var ratings = [];
+        var ratingIcon = 0;
+        if (movie.comboScore) {
+          ratings.push(`Combo score: ${movie.comboScore}`);
+        }
+        if (movie.metascore) {
+          ratings.push(`Metascore: ${movie.metascore}`);
+        }
         if (movie.imdbRating && movie.imdbVotes) {
-          rating = 'Metascore: {0}\r\n'.format(movie.metascore || 'N/A');
-          rating += 'IMDb: {0} / 10 by {1} users\r\n'.format(movie.imdbRating, movie.imdbVotes.toLocaleString());
+          ratings.push('IMDb: {0} / 10 by {1} users'.format(movie.imdbRating, movie.imdbVotes.toLocaleString()));
         }
         if (movie.tomatoMeter && movie.tomatoReviews && movie.tomatoRating) {
-          rating += '{0}% of {1} Rotten Tomatoes critics gave it a positive review ({2} fresh, {3} rotten) with an average rating of {4} / 10\r\n'.format(movie.tomatoMeter, movie.tomatoReviews.toLocaleString(), movie.tomatoFresh, movie.tomatoRotten, movie.tomatoRating);
+          ratings.push('{0}% of {1} Rotten Tomatoes critics gave it a positive review ({2} fresh, {3} rotten) with an average rating of {4} / 10'.format(movie.tomatoMeter, movie.tomatoReviews.toLocaleString(), movie.tomatoFresh, movie.tomatoRotten, movie.tomatoRating));
+        } else if (movie.tomatoMeter && movie.tomatoReviews) {
+          ratings.push('{0}% of {1} Rotten Tomatoes critics gave it a positive review'.format(movie.tomatoMeter, movie.tomatoReviews.toLocaleString()));
         }
         if (movie.tomatoUserMeter && movie.tomatoUserReviews && movie.tomatoUserRating) {
-          rating += '{0}% of {1} Rotten Tomatoes users liked it and gave it an average rating of {2} / 5\r\n'.format(movie.tomatoUserMeter, movie.tomatoUserReviews.toLocaleString(), movie.tomatoUserRating);
+          ratings.push('{0}% of {1} Rotten Tomatoes users liked it and gave it an average rating of {2} / 5'.format(movie.tomatoUserMeter, movie.tomatoUserReviews.toLocaleString(), movie.tomatoUserRating));
+        } else if (movie.tomatoUserMeter && movie.tomatoUserReviews) {
+          ratings.push('{0}% of {1} Rotten Tomatoes users liked it'.format(movie.tomatoUserMeter, movie.tomatoUserReviews.toLocaleString()));
         }
-        if (movie.imdbRating && movie.metascore && movie.tomatoRating && movie.tomatoUserRating && movie.imdbRating >= 7 && movie.metascore >= 70 && movie.tomatoRating >= 7 && movie.tomatoUserRating >= 3.5) {
-          ratingIcon = 'star';
-        } else if (movie.imdbRating) {
-          if (movie.imdbRating >= 7) {
-            ratingIcon = 'thumbs-up';
-          } else {
-            ratingIcon = 'thumbs-down';
+        if (movie.letterboxdScore) {
+          ratings.push(`Letterboxd score: ${movie.letterboxdScore} by ${movie.letterboxdVotes.toLocaleString()} ratings`);
+        }
+        
+        if (movie.comboScore) {
+          ratingIcon = movie.comboScore > 70 ? (movie.comboScore > 84 ? 5 : 1) : -1;
+        } else {
+          if (movie.metascore) { ratingIcon += movie.metascore > 70 ? 1 : -1 }
+          if (movie.imdbRating) { ratingIcon += movie.imdbRating > 7 ? 1 : -1 }
+          if (movie.letterboxdScore) { ratingIcon += movie.letterboxdScore > 70 ? 1 : -1 }
+          if (movie.tomatoRating) {
+            ratingIcon += movie.tomatoRating >=7 ? 1 : -1;
+          } else if (movie.tomatoMeter) {
+            ratingIcon += movie.tomatoMeter >=80 ? 1 : -1;
+          }
+          if (movie.tomatoUserRating) {
+            ratingIcon += movie.tomatoUserRating >=3.5 ? 1 : -1;
+          } else if (movie.tomatoUserMeter) {
+            ratingIcon += movie.tomatoUserMeter >=80 ? 1 : -1;
           }
         }
-        movie.rating = rating || 'N/A';
-        movie.ratingIcon = ratingIcon;
+        movie.rating = ratings.join('\r\n') || 'N/A';
+        movie.ratingIcon = ratingIcon === 0 ? 'hand-left' : (ratingIcon > 0 ? (ratingIcon > 4 ? 'star' : 'thumbs-up') : 'thumbs-down');
         movie.webSite = movie.webSite === 'N/A' ? null : movie.webSite;
 
         $scope.keyedMovies[movie._id] = movie;
