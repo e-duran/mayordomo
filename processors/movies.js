@@ -98,7 +98,7 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         movie.plot = $('.plot').text().trim();
         let $firstReleaseDate = $('h2.rs').next().next().next();
         movie.releasedDate = new Date($firstReleaseDate.text() + $firstReleaseDate.next().text());
-        movie.releaseScope = $('.hidden-xs.hidden-sm').first().text();
+        movie.releaseScope = $firstReleaseDate.next().next().text();
         movie.actors = '';
         $("b[itemprop='actor']").each(function(actor) {
            movie.actors +=  $(this).text() + ', ';
