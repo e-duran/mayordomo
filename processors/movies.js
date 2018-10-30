@@ -86,8 +86,8 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         movie.movieInsiderUrl = moviePageUrl;
         movie.title = movieTitle;
         movie.poster = $('img[itemprop="image"]').attr('src').replace('/p/150/', '/p/');
-        movie.year = $('.year').text();
-        movie.rated = $('.mpaa').text();
+        movie.year = $('.year a').text();
+        movie.rated = $('.mpaa span').text();
         movie.genre = '';
         $('.white.tag').each(function(genre) {
            movie.genre += $(this).text() + ', ';
@@ -96,9 +96,14 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         movie.duration = $("small[itemprop='duration']").text().trim();
         $('.plot').children().remove();
         movie.plot = $('.plot').text().trim();
-        let $firstReleaseDate = $('h2.rs').next().next().next();
-        movie.releasedDate = new Date($firstReleaseDate.text() + $firstReleaseDate.next().text());
-        movie.releaseScope = $firstReleaseDate.next().next().text();
+        let $releaseBlock = $('h3.rs').next();
+        movie.releasedDate = new Date($releaseBlock.children(':nth-child(1)').text() + $releaseBlock.children(':nth-child(2)').text());
+        let releaseScopeWords = $releaseBlock.next().text().split(' ');
+        movie.releaseScope = releaseScopeWords[4];
+        for (let i = 5; i < releaseScopeWords.length - 1; i++) {
+            movie.releaseScope = movie.releaseScope.concat(' ', releaseScopeWords[i]);
+        }
+        movie.releaseScope = movie.releaseScope.replace(' in theaters', '');
         movie.actors = '';
         $("b[itemprop='actor']").each(function(actor) {
            movie.actors +=  $(this).text() + ', ';
