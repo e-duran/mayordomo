@@ -101,7 +101,11 @@ function getVideosByPlaylistId(playlistId) {
     };
     var request = gapi.client.youtube.playlistItems.list(requestOptions);
     request.execute(function(response) {
-        var videoItems = response.result.items;
+        var videoItems = response.result.items.sort(function(a, b) {
+            a = new Date(a.contentDetails.videoPublishedAt);
+            b = new Date(b.contentDetails.videoPublishedAt);
+            return a > b ? -1 : a < b ? 1 : 0;
+        });
         var container = $('#video-container');
         if (videoItems) {
           var channelId = videoItems[0].snippet.channelId;
@@ -208,12 +212,13 @@ function getVideoDuration(videoId) {
         if (seconds < 10) {
             seconds = '0' + seconds;
         }
+        minutes = minutes.replace('H', ':');
         $('#' + videoId + '-duration').text(`(${minutes}:${seconds})`);
     });
 }
 
 function logVideoInfo(channelId, videoId) {
-    console.log('Channedl ID: ' + channelId);
+    console.log('Channel ID: ' + channelId);
     console.log('Video ID: ' + videoId);
 }
 
