@@ -190,6 +190,7 @@ function getVideoDuration(videoId) {
         duration = duration.substr(2);
         var minuteMarker = duration.indexOf('M');
         var minutes = minuteMarker == -1 ? '00' : duration.substring(0, minuteMarker); 
+        minutes = minutes.replace('H', ':');
         duration = duration.replace('S', '');
         var seconds = duration.substring(minuteMarker + 1) | 0;
         if (seconds < 10) {
@@ -200,7 +201,7 @@ function getVideoDuration(videoId) {
 }
 
 function logVideoInfo(channelId, videoId) {
-    console.log('Channedl ID: ' + channelId);
+    console.log('Channel ID: ' + channelId);
     console.log('Video ID: ' + videoId);
 }
 

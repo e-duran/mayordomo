@@ -99,7 +99,7 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         let $releaseBlock = $('h3.rs').next();
         movie.releasedDate = new Date($releaseBlock.children(':nth-child(1)').text() + $releaseBlock.children(':nth-child(2)').text());
         let releaseScopeWords = $releaseBlock.next().text().split(' ');
-        movie.releaseScope = releaseScopeWords[4];
+        movie.releaseScope = releaseScopeWords.length >= 5 ? releaseScopeWords[4] : 'TBA';
         for (let i = 5; i < releaseScopeWords.length - 1; i++) {
             movie.releaseScope = movie.releaseScope.concat(' ', releaseScopeWords[i]);
         }
