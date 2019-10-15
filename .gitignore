@@ -32,3 +32,5 @@ backup
 # Cloud9 files
 .c9
 
+# IDE files
+.vscode

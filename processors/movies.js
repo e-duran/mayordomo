@@ -86,33 +86,30 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         movie.movieInsiderUrl = moviePageUrl;
         movie.title = movieTitle;
         movie.poster = $('img[itemprop="image"]').attr('src').replace('/p/150/', '/p/');
-        movie.year = $('.year a').text();
+        
         movie.rated = $('.mpaa span').text();
         movie.genre = '';
-        $('.white.tag').each(function(genre) {
-           movie.genre += $(this).text() + ', ';
+        $('a[itemprop="genre"]').each(function(genre) {
+           movie.genre += $(this).text().trim() + ', ';
         });
         if (movie.genre) { movie.genre = movie.genre.substr(0, movie.genre.length - 2); }
-        movie.duration = $("small[itemprop='duration']").text().trim();
-        $('.plot').children().remove();
-        movie.plot = $('.plot').text().trim();
-        let $releaseBlock = $('h3.rs').next();
-        movie.releasedDate = new Date($releaseBlock.children(':nth-child(1)').text() + $releaseBlock.children(':nth-child(2)').text());
-        let releaseScopeWords = $releaseBlock.next().text().split(' ');
-        movie.releaseScope = releaseScopeWords.length >= 5 ? releaseScopeWords[4] : 'TBA';
-        for (let i = 5; i < releaseScopeWords.length - 1; i++) {
-            movie.releaseScope = movie.releaseScope.concat(' ', releaseScopeWords[i]);
-        }
-        movie.releaseScope = movie.releaseScope.replace(' in theaters', '');
+        movie.duration = $('p[itemprop="duration"] strong').text().trim();
+        movie.plot = $('p[itemprop="description"]').text().trim();
+        let scopeSeparator = "  ";
+        let scopeBlock = $('#showtimes dd').first().text().trim();
+        movie.releaseScope = scopeBlock.substring(scopeBlock.indexOf(scopeSeparator) + 2);
+        let releaseDate = scopeBlock.substring(0, scopeBlock.indexOf(scopeSeparator));
+        movie.releasedDate = new Date(releaseDate);
+        if (movie.releasedDate.isValid()) movie.year = movie.releasedDate.getFullYear();
         movie.actors = '';
-        $("b[itemprop='actor']").each(function(actor) {
-           movie.actors +=  $(this).text() + ', ';
+        $('b[itemprop="actor"]').each(function(actor) {
+           movie.actors += $(this).text().trim() + ', ';
         });
         if (movie.actors) { movie.actors = movie.actors.substr(0, movie.actors.length - 2); }
-        movie.director = $('.credits').eq(0).children('a').text().trim().replace('  ', ', ');
-        movie.writer = $('.credits').eq(1).children('a').text().trim().replace('  ', ', ');
+        movie.director = $('p[itemprop="director"] a').text().trim().replace(/  /g, ', ');
+        movie.writer = $('.credits').eq(0).children('a').text().trim().replace(/  /g, ', ');
         
-        var imdbIdUrl = 'http://www.imdb.com/title/tt';
+        var imdbIdUrl = 'https://www.imdb.com/title/tt';
         var imdbUrlStartIndex = moviePageData.indexOf(imdbIdUrl);
         if (imdbUrlStartIndex > 0) {
             var imdbIdStartIndex = imdbUrlStartIndex + imdbIdUrl.length - 2;
