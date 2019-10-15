@@ -76,7 +76,6 @@ exports.execute = async function (req, res) {
 };
 
 async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
-    var movieResult = null;
     try {
         var moviePageResponse = await axios.get(moviePageUrl);
         var moviePageData = moviePageResponse.data;
@@ -129,13 +128,12 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         if (!movie.year || !movie.releasedDate || !movie.poster || !movie.plot || !movie.actors) {
             movie.needsReview = true;
         }
-        movieResult = movie;
     } catch (e) {
         log(`Error getting details for movie ${movieTitle}`);
         throw e;
     }
     
-    return movieResult;
+    return movie;
 }
 
 async function getImdbId(log, axios, cheerio, movie) {

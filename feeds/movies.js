@@ -16,7 +16,7 @@ exports.generate = async function (req, res) {
             title: 'Movies',
             description: 'Calendar of movies releases to theaters',
             feed_url: `${config.publicHost}/rss/movies`,
-            site_url: 'http://www.movieinsider.com/movies/this-week/',
+            site_url: config.movieCalendarUrl,
             image_url: config.moviesFeedImageUrl,
             language: 'en',
             pubDate: new Date()
@@ -46,7 +46,7 @@ exports.generate = async function (req, res) {
             feed.item({
                 title:  movie.title,
                 description: description,
-                url: movie.imdbId ? 'http://www.imdb.com/title/' + movie.imdbId : movie.movieInsiderUrl,
+                url: movie.imdbId ? 'https://www.imdb.com/title/' + movie.imdbId : movie.movieInsiderUrl,
                 guid: movie._id.toString(),
                 author: 'Mayordomo',
                 date: movie.modifiedAt || movie.createdAt // but use the modified date as the item/movie's publication date
