@@ -73,62 +73,79 @@ function getVideosByBookmarkedVideoId(bookmarkedVideoId) {
     request.execute(function(response) {
         var videos = response.result.items;
         if (videos && videos.length > 0) {
-            getVideosByChannelId(videos[0].snippet.channelId);
+          getUploadPlaylistByChannelId(videos[0].snippet.channelId);
         }
     });
 }
 
-function getVideosByChannelId(channelId) {
+function getUploadPlaylistByChannelId(channelId) {
+  var requestOptions = {
+      part: 'contentDetails',
+      id: channelId,
+      fields: 'items/contentDetails/relatedPlaylists/uploads'
+    };
+    var request = gapi.client.youtube.channels.list(requestOptions);
+    request.execute(function(response) {
+      if (!response.items) { console.error(`Didn't find Uploaded playlist for channel ${channelId}`); return; }
+      let uploadsPlaylistId = response.items[0].contentDetails.relatedPlaylists.uploads;
+      getVideosByPlaylistId(uploadsPlaylistId);
+    });
+}
+
+function getVideosByPlaylistId(playlistId) {
     var requestOptions = {
-        part: 'snippet',
-        channelId: channelId,
-        order: 'date',
-        type: 'video',
-        fields: 'items(id,snippet(channelId,channelTitle,publishedAt,thumbnails(default,medium),title))',
+        part: 'snippet,contentDetails',
+        playlistId: playlistId,
+        fields: 'items(contentDetails(videoId,videoPublishedAt),snippet(channelId,channelTitle,thumbnails(default,medium),title))',
         maxResults: 10
     };
-    var request = gapi.client.youtube.search.list(requestOptions);
+    var request = gapi.client.youtube.playlistItems.list(requestOptions);
     request.execute(function(response) {
-        var videoItems = response.result.items;
+        var videoItems = response.result.items.sort(function(a, b) {
+            a = new Date(a.contentDetails.videoPublishedAt);
+            b = new Date(b.contentDetails.videoPublishedAt);
+            return a > b ? -1 : a < b ? 1 : 0;
+        });
         var container = $('#video-container');
         if (videoItems) {
-            var channelName = videoItems[0].snippet.channelTitle;
-            var channelDiv = $("<div/>").addClass("channelName").text(channelName);
-            var videosDiv = $("<div/>").addClass("videos");
-            var table = $('<table/>');
-            var tableWidth = 0;
-            var row = $('<tr/>');
-            var lastVideoPair = videosMap.find(function(videoPair){
-                return videoPair.channel === channelId;
-            });
-            var lastVideoId = lastVideoPair ? lastVideoPair.lastVideoSeen : null;
-            var stop = false;
-            
-            $.each(videoItems, function(index, item) {
-                var videoId = item.id.videoId;
-                if (videoId !== lastVideoId && !stop) {
-                    displayResult(videoId, item.snippet, row);
-                    tableWidth += 320 + 20; 
-                } else {
-                    stop = true;
-                }
-            });
-            if (tableWidth > 0) {
-                table.width(tableWidth);
-                table.append(row);
-                videosDiv.append(table);
-                
-                container.append(channelDiv);
-                container.append(videosDiv);
-            }
+          var channelId = videoItems[0].snippet.channelId;
+          var channelName = videoItems[0].snippet.channelTitle;
+          var channelDiv = $("<div/>").addClass("channelName").text(channelName);
+          var videosDiv = $("<div/>").addClass("videos");
+          var table = $('<table/>');
+          var tableWidth = 0;
+          var row = $('<tr/>');
+          var lastVideoPair = videosMap.find(function(videoPair){
+              return videoPair.channel === channelId;
+          });
+          var lastVideoId = lastVideoPair ? lastVideoPair.lastVideoSeen : null;
+          var stop = false;
+          
+          $.each(videoItems, function(index, item) {
+              var videoId = item.contentDetails.videoId;
+              if (videoId !== lastVideoId && !stop) {
+                  displayResult(videoId, item.contentDetails, item.snippet, row);
+                  tableWidth += 320 + 20; 
+              } else {
+                  stop = true;
+              }
+          });
+          if (tableWidth > 0) {
+              table.width(tableWidth);
+              table.append(row);
+              videosDiv.append(table);
+              
+              container.append(channelDiv);
+              container.append(videosDiv);
+          }
         }
     });
 }
 
 // Create a listing for a video.
-function displayResult(videoId, snippet, row) {
+function displayResult(videoId, contentDetails, snippet, row) {
   var title = snippet.title;
-  var date = new Date(snippet.publishedAt);
+  var date = new Date(contentDetails.videoPublishedAt);
   var dateString = date.toDateString() + ' ';
   var time = date.toTimeString().substr(0, 8);
   dateString += time.charAt(0) == 0 ? time.substr(1) : time;
@@ -196,6 +213,7 @@ function getVideoDuration(videoId) {
         if (seconds < 10) {
             seconds = '0' + seconds;
         }
+        minutes = minutes.replace('H', ':');
         $('#' + videoId + '-duration').text(`(${minutes}:${seconds})`);
     });
 }
