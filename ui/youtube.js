@@ -74,6 +74,9 @@ function getVideosByBookmarkedVideoId(bookmarkedVideoId) {
         var videos = response.result.items;
         if (videos && videos.length > 0) {
           getUploadPlaylistByChannelId(videos[0].snippet.channelId);
+        } else {
+          console.error(`No video info response returned for bookmarked video ${bookmarkedVideoId} (likely because it was set to private or deleted)`);
+          toastr.error(`<span class="notification">Couldn't get channel of bookmarked video</span>`);
         }
     });
 }
