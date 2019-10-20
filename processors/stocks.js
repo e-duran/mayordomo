@@ -19,8 +19,11 @@ exports.execute = async function (req, res) {
             var priceLimit = parseFloat(stockWatchList[i].split('|')[1]);
             var stockResponse = await axios.get('https://www.google.com/finance?q=' + quote);
             var $ = cheerio.load(stockResponse.data);
-            var price = parseFloat($('span[style="font-size:157%"]').text());
-            var dateTime = $('.f').first().text() || new Date().toDateString();
+            var price = parseFloat($('.BNeawe.iBp4i.AP7Wnd').text());
+            var dateTime = $('.r0bn4c.rQMQod').eq(1).text();
+            dateTime = dateTime.substring(0, dateTime.indexOf('UTC') + 3);
+            dateTime = new Date(dateTime);
+            dateTime = dateTime.isValid() ? dateTime : new Date().toDateString();
             if (isNaN(price)) {
                 log(`Cannot find price information for stock ${quote}`);
                 continue;

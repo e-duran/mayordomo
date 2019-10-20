@@ -5,6 +5,9 @@
     <a ng-if="movie.webSite" href="{{ movie.webSite }}" target="_blank" title="Open movie's Web site in new tab">
       <span class="hor-space small glyphicon glyphicon-globe"></span>
     </a>
+    <a ng-if="movie.movieInsiderUrl" href="{{ movie.movieInsiderUrl }}" target="_blank" title="Open Movie Insider's movie page in new tab">
+      <span class="hor-space small glyphicon glyphicon-globe"></span>
+    </a>
   </h3>
 </div>
 <div class="modal-body">
@@ -35,15 +38,15 @@
     <div ng-if="movie.duration" class="col-xs-9">{{ movie.duration }}</div>
     <div ng-if="!movie.runtimeInMinutes && !movie.duration" class="col-xs-9">N/A</div>
   </div>
-  <div class="row">
+  <div class="row" ng-if="movie.awards">
     <div class="col-xs-3"><strong>Awards:</strong></div>
     <div class="col-xs-9">{{ movie.awards || 'N/A' }}</div>
   </div>
-  <div class="row">
+  <div class="row" ng-if="movie.language">
     <div class="col-xs-3"><strong>Language:</strong></div>
     <div class="col-xs-9">{{ movie.language || 'N/A' }}</div>
   </div>
-  <div class="row">
+  <div class="row" ng-if="movie.country">
     <div class="col-xs-3"><strong>Country:</strong></div>
     <div class="col-xs-9">{{ movie.country || 'N/A' }}</div>
   </div>
@@ -97,10 +100,14 @@
     <div class="col-xs-9">{{ movie.releasedDate | date : 'fullDate' : 'UTC' }}</div>
   </div>
   <div class="row">
+    <div class="col-xs-3"><strong>Release Scope:</strong></div>
+    <div class="col-xs-9">{{ movie.releaseScope }}</div>
+  </div>
+  <div class="row">
     <div class="col-xs-3"><strong>Released (DVD):</strong></div>
     <div class="col-xs-9">{{ (movie.releasedToDvdDate | date : 'fullDate' : 'UTC') || 'N/A' }}</div>
   </div>
-  <div class="row">
+  <div class="row" ng-if="movie.producer">
     <div class="col-xs-3"><strong>Producer:</strong></div>
     <div class="col-xs-9">{{ movie.producer || 'N/A' }}</div>
   </div>
