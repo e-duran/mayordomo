@@ -17,7 +17,7 @@
     "method-override": "^2.3.10",
     "moment-timezone": "^0.5.14",
     "mongodb": "^3.0.2",
-    "morgan": "^1.9.0",
+    "morgan": "^1.9.1",
     "rss": "^1.2.2",
     "serve-favicon": "^2.4.5"
   },
