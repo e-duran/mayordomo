@@ -84,7 +84,7 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
 
         movie.movieInsiderUrl = moviePageUrl;
         movie.title = movieTitle;
-        movie.poster = $('img[itemprop="image"]').attr('src').replace('/p/150/', '/p/');
+        movie.poster = $('img[itemprop="image"]').attr('src').replace('/p/175/', '/p/');
         
         movie.rated = $('.mpaa span').text();
         movie.genre = '';
