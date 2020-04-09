@@ -3,27 +3,32 @@ var lastPlaylistId, nextPageToken, prevPageToken, videosMap;
 
 // After the API loads, call a function to get bookmarked videos stored in pre-defined playlists
 function handleAPILoaded() {
-    $.ajax({
-        url: '/api/videos',
+  $.ajax({
+    url: '/api/videos',
+    cache: false
+  })
+    .done(function (videos) {
+      videosMap = videos;
+      $.ajax({
+        url: '/api/videos/playlists',
         cache: false
-    })
-    .done(function(videos) {
-        videosMap = videos;
-        $.ajax({
-            url: '/api/videos/playlists',
-            cache: false
-        })
-        .done(function(playlists) {
-            console.log(`Processing ${playlists.length} playlists - ${new Date()}`);
-            videosMap = videos;
-            $.each(playlists, function(index, item) {
-                requestVideoPlaylist(item);
-            });
-            toastr.options = {
-              "closeButton": true,
-              "timeOut": 0,
-              "extendedTimeOut": 0,
-            };
+      })
+        .done(function (playlists) {
+          let params = new URLSearchParams(location.search);
+          let playlistId = params.get('playlistId');
+          if (playlistId) {
+            playlists = [playlistId];
+          }
+          console.log(`Processing ${playlists.length} playlists - ${new Date()}`);
+          videosMap = videos;
+          $.each(playlists, function (index, item) {
+            requestVideoPlaylist(item);
+          });
+          toastr.options = {
+            "closeButton": true,
+            "timeOut": 0,
+            "extendedTimeOut": 0,
+          };
         });
     });
 }
@@ -36,7 +41,7 @@ function requestVideoPlaylist(playlistId, pageToken) {
     playlistId: playlistId,
     part: 'contentDetails',
     fields: 'items/contentDetails/videoId',
-    maxResults: 50
+    maxResults: 3
   };
   if (pageToken) {
     requestOptions.pageToken = pageToken;
@@ -58,7 +63,7 @@ function requestVideoPlaylist(playlistId, pageToken) {
         getVideosByBookmarkedVideoId(item.contentDetails.videoId);
       });
     } else {
-      console.log('Sorry, no videos for playlist ' + playlistId);
+      console.warn('Sorry, no videos for playlist ' + playlistId);
     }
   });
 }
