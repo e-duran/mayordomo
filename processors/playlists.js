@@ -36,7 +36,7 @@ async function processVideosInPlaylist(playlist) {
 
 async function processVideo(videoId) {
     try {
-        const separator = '**********************';
+        const separator = '********';
         const params = {
             id: videoId,
             part: 'snippet'
@@ -57,7 +57,7 @@ async function processVideo(videoId) {
             if (sepPos >= 0) {
                 video.note = video.note.substring(0, sepPos) + info;
             } else {
-                video.note = info;
+                video.note += (video.note ? '\n' : '') + info;
             }
             if (video.note.length > 280) {
                 video.note = video.note.substr(0, 280);
