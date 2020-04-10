@@ -13,13 +13,16 @@
     "body-parser": "^1.18.2",
     "cheerio": "^1.0.0-rc.2",
     "express": "^4.16.2",
+    "googleapis": "^48.0.0",
     "mailgun-js": "^0.16.0",
     "method-override": "^2.3.10",
     "moment-timezone": "^0.5.14",
     "mongodb": "^3.0.2",
     "morgan": "^1.9.1",
+    "open": "^7.0.3",
     "rss": "^1.2.2",
-    "serve-favicon": "^2.4.5"
+    "serve-favicon": "^2.4.5",
+    "server-destroy": "^1.0.1"
   },
   "scripts": {
     "start": "node server.js"

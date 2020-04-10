@@ -66,7 +66,7 @@ function requestVideoPlaylist(playlistId, pageToken) {
     playlistId: playlistId,
     part: 'contentDetails',
     fields: 'items/contentDetails/videoId',
-    maxResults: maxResults || 3
+    maxResults: maxResults || 50
   };
   if (pageToken) {
     requestOptions.pageToken = pageToken;

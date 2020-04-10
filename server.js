@@ -100,7 +100,8 @@ var processorsMap = {
     movies: '/processors/movies',
     moviesOnDvd: '/processors/moviesOnDvd',
     stocks: '/processors/stocks',
-    supercuts: '/processors/supercuts'
+    supercuts: '/processors/supercuts',
+    playlists: '/processors/playlists'
 };
 global.processorsMap = processorsMap;
 
@@ -127,6 +128,9 @@ app.get(processorsMap.stocks, stockProcessor.execute);
 var supercutsProcessor = require('./processors/supercuts');
 app.get(processorsMap.supercuts, supercutsProcessor.execute);
 
+var playlistsProcessor = require('./processors/playlists');
+app.get(processorsMap.playlists, playlistsProcessor.execute);
+
 var taskProcessor = require('./processors/task.js');
 app.get('/processors/task', taskProcessor.execute);
 
@@ -136,6 +140,8 @@ var videoApi = require('./api/videos');
 videoApi.register(app);
 var logsApi = require('./api/logs');
 logsApi.register(app);
+var oauth2CallbackApi = require('./api/oauth2callback');
+oauth2CallbackApi.register(app);
 
 app.listen(port, ip, null, async function() {
     console.log('Started Express server for Mayordomo on IP %s and port %s', ip, port);

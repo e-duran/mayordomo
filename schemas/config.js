@@ -19,6 +19,10 @@ var ConfigSchema = new mongoose.Schema({
         stylistInfoUrl: String,
         videoPlaylists: [PlaylistSchema],
         videoClientId: String,
+        maxPlaylistToProcess: Number,
+        playlistItemsListMaxResults: Number,
+        googleApiTokens: Object,
+        googleApiCredentials: Object
     });
 
 module.exports = mongoose.model('Config', ConfigSchema);
