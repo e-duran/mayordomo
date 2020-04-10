@@ -14,11 +14,32 @@ function handleAPILoaded() {
         cache: false
       })
         .done(function (playlists) {
+          let requestedPlaylist;
           let params = new URLSearchParams(location.search);
-          let playlistId = params.get('playlistId');
-          if (playlistId) {
-            playlists = [playlistId];
+          let requestedPlaylistId = params.get('playlistId');
+          if (requestedPlaylistId) {
+            requestedPlaylist = playlists.find(x => x.id === requestedPlaylistId);
+          } else {
+            requestedPlaylist = playlists.find(x => x.isDefault);
           }
+
+          let playlistsControl = $("#playlists");
+          $.each(playlists, function (index, playlist) {
+            let select = playlist.id === requestedPlaylist.id
+            playlistsControl.append(new Option(playlist.name, playlist.id, select, select))
+          });
+          $(function () {
+            playlistsControl.selectmenu({
+              change: function (event, data) {
+                const playlistId = data.item.value;
+                if (!playlistId) return;
+                window.location = `${location.protocol}//${location.host}${location.pathname}?playlistId=${playlistId}`;
+              },
+              width: 140
+            })
+          });
+          
+          playlists = [requestedPlaylist.id];
           console.log(`Processing ${playlists.length} playlists - ${new Date()}`);
           videosMap = videos;
           $.each(playlists, function (index, item) {
@@ -36,12 +57,16 @@ function handleAPILoaded() {
 // Retrieve the list of videos in the specified playlist.
 function requestVideoPlaylist(playlistId, pageToken) {
   lastPlaylistId = playlistId;
+  let maxResults = new URLSearchParams(location.search).get('maxResults');
+  if (maxResults) {
+    maxResults = parseInt(maxResults);
+  }
   $('#video-container').html('');
   var requestOptions = {
     playlistId: playlistId,
     part: 'contentDetails',
     fields: 'items/contentDetails/videoId',
-    maxResults: 3
+    maxResults: maxResults || 3
   };
   if (pageToken) {
     requestOptions.pageToken = pageToken;

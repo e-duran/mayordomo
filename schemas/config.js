@@ -1,5 +1,11 @@
 var mongoose = require('mongoose');
 
+var PlaylistSchema = new mongoose.Schema({
+    id: String,
+    name: String,
+    isDefault: Boolean
+});
+
 var ConfigSchema = new mongoose.Schema({
         publicHost: String,
         enableCors: Boolean,
@@ -11,7 +17,7 @@ var ConfigSchema = new mongoose.Schema({
         stylistId: Number,
         stylistName: String,
         stylistInfoUrl: String,
-        videoPlaylists: String,
+        videoPlaylists: [PlaylistSchema],
         videoClientId: String,
     });
 

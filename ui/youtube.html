@@ -35,27 +35,10 @@
     <div id="addVideo"><i class="fas fa-plus-circle fa-3x"></i></div>
     <div id="playlistChooser">
       <select id="playlists">
-        <option value="">Playlists</option>
-        <option value="PLCVEbWsxr5Hiqi2_Pft3VDrkgfXnaON_s">Favorites 2</option>
-        <option value="PLCVEbWsxr5HjnvLpBSasq5RMT_Ihdp8LJ">Starting</option>
-        <option value="PLCVEbWsxr5HhlFnoBR5EpmoqflUFMyvRK">Infrequent</option>
       </select>
     </div>
-    
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <script>
-      $(function () {
-        $("#playlists").selectmenu({
-          change: function (event, data) {
-            const playlistId = data.item.value;
-            if (!playlistId) return;
-            window.location = `${location.protocol}//${location.host}${location.pathname}?playlistId=${playlistId}`;
-          },
-          width: 140
-        })
-      });
-    </script>
     <script type="text/javascript" src="auth.js"></script>
     <script type="text/javascript" src="youtube.js"></script>
     <script async defer src="https://apis.google.com/js/api.js" 

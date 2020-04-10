@@ -54,7 +54,7 @@ exports.register = function (app) {
     app.get(basePath + '/playlists', async function (req, res) {
         try {
             if (!global.config) global.config = await global.getConfig(); 
-            var playlists = global.config.videoPlaylists.split(',');
+            var playlists = global.config.videoPlaylists;
             res.json(playlists);
         } catch (e) {
             global.jsonApiError(res, e);
