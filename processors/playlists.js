@@ -14,7 +14,8 @@ async function processVideosInPlaylist(playlist) {
         var playlistItems = playlistItemsResponse.data.items;
         if (playlistItems) {
             for (let i = 0; i < playlistItems.length; i++) {
-                const playlistItem = playlistItems[i];
+                let index = config.reversePlaylistOrder ? playlistItems.length - i - 1 : i;
+                const playlistItem = playlistItems[index];
                 const videoId = playlistItem.snippet.resourceId.videoId;
                 allVideos[videoId] = {
                     id: videoId,
@@ -22,7 +23,7 @@ async function processVideosInPlaylist(playlist) {
                     playlistId: playlist.id,
                     playlistName: playlist.name,
                     resourceId: playlistItem.snippet.resourceId,
-                    note: playlistItem.contentDetails.note || ""
+                    note: playlistItem.contentDetails.note
                 };
                 await processVideo(videoId);
             }
@@ -36,33 +37,22 @@ async function processVideosInPlaylist(playlist) {
 
 async function processVideo(videoId) {
     try {
-        const separator = '********';
         const params = {
             id: videoId,
             part: 'snippet'
         };
         const response = await youtube.videos.list(params);
         const video = allVideos[videoId];
-        if (response.data.items.length > 0) {
+        if (response.data.items.length > 0 && !video.note) {
             const videoInfo = response.data.items[0].snippet;
             video.channelId = videoInfo.channelId;
             video.channelTitle = videoInfo.channelTitle;
             video.title = videoInfo.title;
 
-            let info = separator + '\n';
-            info += `Channel: ${video.channelTitle}\n`;
-            info += `Channel Id: ${video.channelId}\n`;
+            let info = `Channel: ${video.channelTitle}\n`;
             info += `Video title: ${video.title}\n`;
-            const sepPos = video.note.indexOf(separator);
-            if (sepPos >= 0) {
-                video.note = video.note.substring(0, sepPos) + info;
-            } else {
-                video.note += (video.note ? '\n' : '') + info;
-            }
-            if (video.note.length > 280) {
-                video.note = video.note.substr(0, 280);
-                video.maxNoteLenOver = true;
-            }
+            info += `URL: https://www.youtube.com/channel/${video.channelId}/videos`;
+            video.note = info;
 
             const request = {
                 part: 'snippet,contentDetails',
@@ -78,7 +68,7 @@ async function processVideo(videoId) {
                 }
             }
             await youtube.playlistItems.update(request);
-        } else {
+        } else if (response.data.items.length === 0) {
             video.isMissing = true;
         }
     } catch (error) {
@@ -117,9 +107,6 @@ exports.execute = async function (req, res) {
         allVideos.forEach(video => {
             if (video.isMissing) {
                 message += `Video ${video.id} from playlist ${playlist.name} was deleted or set to private<br>`;
-            }
-            if (video.maxNoteLenOver) {
-                message += `The note of video ${video.id} from playlist ${playlist.name} was truncated because it exceeded 280 chars<br>`;
             }
         });
         if (message) {
