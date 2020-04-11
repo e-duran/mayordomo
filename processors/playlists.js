@@ -103,9 +103,14 @@ exports.execute = async function (req, res) {
             auth: authenticatedClient,
         });
         const playlists = global.config.videoPlaylists;
-        for (let i = 0; i < Math.min(config.maxPlaylistToProcess || playlists.length, playlists.length); i++) {
+        let maxPlaylists = Math.min(config.maxPlaylistToProcess || playlists.length, playlists.length);
+        for (let i = 0; i < maxPlaylists; i++) {
             const playlist = playlists[i];
-            await processVideosInPlaylist(playlist);
+            if (playlist.isDefault) {
+                maxPlaylists++;
+            } else {
+                await processVideosInPlaylist(playlist);
+            }
         }
 
         let message = '';
