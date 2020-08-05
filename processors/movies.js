@@ -94,10 +94,9 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         if (movie.genre) { movie.genre = movie.genre.substr(0, movie.genre.length - 2); }
         movie.duration = $('p[itemprop="duration"] strong').text().trim();
         movie.plot = $('p[itemprop="description"]').text().trim();
-        let scopeSeparator = "  ";
-        let scopeBlock = $('#showtimes dd').first().text().trim();
-        movie.releaseScope = scopeBlock.substring(scopeBlock.indexOf(scopeSeparator) + 2);
-        let releaseDate = scopeBlock.substring(0, scopeBlock.indexOf(scopeSeparator));
+        let releaseParagraph = $('.fa.fa-calendar-o.fa-fw').eq(1).parent().next();
+        movie.releaseScope = releaseParagraph.contents()[1].data.trim();     // Cheerio uses data instead of textContent
+        let releaseDate = releaseParagraph.find('a').text();
         movie.releasedDate = new Date(releaseDate);
         if (movie.releasedDate.isValid()) movie.year = movie.releasedDate.getFullYear();
         movie.actors = '';
