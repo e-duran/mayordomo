@@ -97,6 +97,9 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         let releaseParagraph = $('.fa.fa-calendar-o.fa-fw').eq(1).parent().next();
         let releaseScope = releaseParagraph.contents()[1].data.trim();     // Cheerio uses data instead of the textContent property of the Node interface (DOM)
         movie.releaseScope = releaseScope.substr(1, releaseScope.length - 2);
+        if (movie.releaseScope.startsWith('(') && movie.releaseScope.endsWith(')')) {
+            movie.releaseScope = releaseScope.substr(1, releaseScope.length - 2);
+        }
         let releaseDate = releaseParagraph.find('a').text();
         movie.releasedDate = new Date(releaseDate);
         if (movie.releasedDate.isValid()) movie.year = movie.releasedDate.getFullYear();
