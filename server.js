@@ -140,6 +140,8 @@ var videoApi = require('./api/videos');
 videoApi.register(app);
 var logsApi = require('./api/logs');
 logsApi.register(app);
+var notificationApi = require('./api/notifications');
+notificationApi.register(app);
 
 app.listen(port, ip, null, async function() {
     console.log('Started Express server for Mayordomo on IP %s and port %s', ip, port);
