@@ -3,33 +3,36 @@
 exports.execute = async function (req, res) {
     res.type('text/plain; charset=utf-8');
     
-    var log = function (message, error) { global.log(res, message, error) };
-    var logStore = null;
-    
+    let logStore;
     try {
-        if (!global.config) global.config = await global.getConfig(); 
-        var name = req.query.processorName;
-        var processorPath = global.processorsMap[name];
-        if (!processorPath) {
-            res.send(`No processor found for task "${name}"`);
-            return;
+        if (!global.config) {
+            global.config = await global.getConfig();
         }
+        
+        let name = req.query.processorName;
+        let processorPath = global.processorsMap[name];
+        
         if (name === 'ping') {
             res.send('pong');
             return;
         }
-        var url = global.config.publicHost + processorPath;
-        var axios = require('axios');
+        if (!processorPath) {
+            res.send(`No processor found with name "${name}"`);
+            return;
+        }
+        
+        let url = global.config.publicHost + processorPath;
+        let axios = require('axios');
         axios.get(url).then(async function (response) {
             logStore = await global.getStore('logs');
-            var logEntry = { category: name , data: response.data, timestamp: new Date() };
-            var result = await logStore.insertOne(logEntry);
+            let logEntry = { category: name , data: response.data, timestamp: new Date() };
+            let result = await logStore.insertOne(logEntry);
             console.log(`Log entry created with ID ${result.insertedId}`);
             logStore.client.close();
         });
         res.send('Called processor ' + name);
     } catch (e) {
-        log('Exception', e);
+        global.log(res, `Unhandled exception while calling processor ${name} - `, error);
         if (logStore) {
             logStore.client.close();
         }
