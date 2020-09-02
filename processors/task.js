@@ -10,6 +10,14 @@ exports.execute = async function (req, res) {
         if (!global.config) global.config = await global.getConfig(); 
         var name = req.query.processorName;
         var processorPath = global.processorsMap[name];
+        if (!processorPath) {
+            res.send(`No processor found for task "${name}"`);
+            return;
+        }
+        if (name === 'ping') {
+            res.send('pong');
+            return;
+        }
         var url = global.config.publicHost + processorPath;
         var axios = require('axios');
         axios.get(url).then(async function (response) {
