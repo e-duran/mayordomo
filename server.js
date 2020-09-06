@@ -44,13 +44,13 @@ global.log = function (res, message, error, noEnd) {
     }
 };
 global.jsonApiError = function (res, store, e, status, title, detail, source) {
-    if (store) {
+    if (store && store.client) {
         store.client.close();
     }
     var error = {
         status: status || 500,
         title: title || 'Unhandled exception',
-        detail: detail || e.toString(),
+        detail: detail || e.stack,
         source: source
     };
     res.status(status || 500);

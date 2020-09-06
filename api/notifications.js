@@ -30,4 +30,19 @@ exports.register = function (app) {
             global.jsonApiError(res, e, notificationStore);
         }
     });
+
+    app.get(basePath, async function (req, res) {
+        let notificationStore;
+        const lastObjectId = req.query.lastObjectId;
+        const ObjectID = require('mongodb').ObjectID;
+        try {
+            notificationStore = await global.getStore('notifications');
+            const cursor = lastObjectId ? notificationStore.find({_id: { $lt: new ObjectID(lastObjectId)}}) : notificationStore.find();
+            let notifications = await cursor.sort({_id: -1}).limit(20).toArray();
+            notificationStore.client.close();
+            res.json(notifications);
+        } catch (e) {
+            global.jsonApiError(res, e, notificationStore);
+        }
+    });
 };

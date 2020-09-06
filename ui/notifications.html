@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Notifications</title>
+    <script src="https://unpkg.com/vue@2.6.12/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/axios@0.20.0/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/infinite-scroll@3.0.6/dist/infinite-scroll.pkgd.min.js"></script>
+    <style>
+        .notification {
+            font-family: Tahoma, Roboto, sans-serif;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+        <div class="container">
+            <p class="notification" v-for="notification in notifications">
+                {{ notification.createdAt | formatDateTime }}
+            </p>
+        </div>
+    </div>
+    <script>
+        const app = new Vue({
+            el: '#app',
+            data: {
+                notifications: []
+            },
+            methods: {
+                addNotification: function (notification) {
+                    notification.createdAt = new Date(notification.createdAt);
+                    this.notifications.push(notification);
+                },
+                getInitialNotifications: async function () {
+                    const response = await axios.get('/api/notifications');
+                    response.data.forEach(notification => this.addNotification(notification));
+                }
+            },
+            beforeMount: async function () {
+                try {
+                    await this.getInitialNotifications();
+                } catch (error) {
+                    console.log(error.stack);
+                }
+            },
+            filters: {
+                formatDateTime: function (value) {
+                    return (value instanceof Date) ? value.toLocaleString() : '';
+                }
+            }
+        });
+
+        const infiniteScroll = new InfiniteScroll('.container', {
+            path: function () {
+                const notifications = app.notifications;
+                if (notifications && notifications.length) {
+                    const lastObjectId = notifications[notifications.length - 1]._id;
+                    return `/api/notifications?lastObjectId=${lastObjectId}`;
+                }
+                return '/api/notifications';
+            },
+            responseType: 'text',
+            append: false,
+            history: false
+        });
+        infiniteScroll.on('load', function(response) {
+            const notifications = JSON.parse(response);
+            notifications.forEach(notification => app.addNotification(notification));
+        });
+        </script>
+  </body>
+</html>
