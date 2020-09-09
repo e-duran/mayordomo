@@ -38,7 +38,7 @@ exports.register = function (app) {
         try {
             notificationStore = await global.getStore('notifications');
             const cursor = lastObjectId ? notificationStore.find({_id: { $lt: new ObjectID(lastObjectId)}}) : notificationStore.find();
-            let notifications = await cursor.sort({_id: -1}).limit(20).toArray();
+            let notifications = await cursor.sort({_id: -1}).limit(100).toArray();
             notificationStore.client.close();
             res.json(notifications);
         } catch (e) {
