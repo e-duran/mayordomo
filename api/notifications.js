@@ -7,7 +7,8 @@ exports.register = function (app) {
         let notificationStore;
         try {
             let source = req.body.source,
-                content = req.body.content;
+                content = req.body.content,
+                sourceTimestamp = req.body.timestamp ? new Date(Number.parseInt(req.body.timestamp)) : null;
             if (!source) {
                 global.jsonApiError(res, null, null, 400, 'Missing data', `Missing value for property 'source' in request body`, { 'data': 'source' });
                 return;
@@ -20,6 +21,7 @@ exports.register = function (app) {
             let notification = {
                 source: source,
                 content : content,
+                sourceTimestamp: sourceTimestamp,
                 createdAt: new Date()
             };
             notificationStore = await global.getStore('notifications');

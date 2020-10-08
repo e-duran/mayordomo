@@ -7,9 +7,13 @@
     <script src="https://unpkg.com/vue@2.6.12/dist/vue.min.js"></script>
     <script src="https://unpkg.com/axios@0.20.0/dist/axios.min.js"></script>
     <script src="https://unpkg.com/infinite-scroll@3.0.6/dist/infinite-scroll.pkgd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue2-filters/dist/vue2-filters.min.js"></script>
     <style>
         .notification {
             font-family: Tahoma, Roboto, sans-serif;
+        }
+        .gap {
+            padding-left: 10px;
         }
     </style>
   </head>
@@ -17,7 +21,9 @@
     <div id="app">
         <div class="container">
             <p class="notification" v-for="notification in notifications">
-                {{ notification.createdAt | formatDateTime }}
+                <span>{{ notification.createdAt | formatDateTime }}</span>
+                <span v-if="notification.hasGap" class="gap">{{ notification.sourceTimestamp | formatTime }}</span>
+                <span v-if="notification.hasGap" class="gap">{{ notification.gap | number('0,0') }} sec</span>
             </p>
         </div>
     </div>
@@ -29,7 +35,12 @@
             },
             methods: {
                 addNotification: function (notification) {
+                    const gapThreshold = 15000;
                     notification.createdAt = new Date(notification.createdAt);
+                    notification.sourceTimestamp = notification.sourceTimestamp ? new Date(notification.sourceTimestamp) : null;
+                    let gap = notification.sourceTimestamp ? notification.createdAt.getTime() - notification.sourceTimestamp.getTime() : null;
+                    notification.hasGap = gap && gap > gapThreshold;
+                    notification.gap = gap / 1000;
                     this.notifications.push(notification);
                 },
                 getInitialNotifications: async function () {
@@ -47,6 +58,9 @@
             filters: {
                 formatDateTime: function (value) {
                     return (value instanceof Date) ? value.toLocaleString() : '';
+                },
+                formatTime: function (value) {
+                    return (value instanceof Date) ? value.toLocaleTimeString() : '';
                 }
             }
         });
