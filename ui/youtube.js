@@ -70,9 +70,7 @@ async function requestVideoPlaylist(playlistId, pageToken) {
     return;
   }
   allVideos = {};
-  for (const playlistItem of playlistItems) {
-    await getChannelByBookmarkedVideoId(playlistItem.contentDetails.videoId);
-  }
+  playlistItems.forEach(playlistItem => getChannelByBookmarkedVideoId(playlistItem.contentDetails.videoId));
 }
 
 async function getChannelByBookmarkedVideoId(bookmarkedVideoId) {
@@ -103,7 +101,7 @@ async function getUploadPlaylistByChannelId(channelId) {
     return;
   }
   let uploadsPlaylistId = response.result.items[0].contentDetails.relatedPlaylists.uploads;
-  await getVideosByPlaylistId(uploadsPlaylistId);
+  getVideosByPlaylistId(uploadsPlaylistId);
 }
 
 async function getVideosByPlaylistId(playlistId) {
@@ -234,9 +232,9 @@ function renderVideo(video, row) {
   row.append(videoCell);
 }
 
-async function openVideo(videoId) {
+function openVideo(videoId) {
   window.open('https://www.youtube.com/watch?v=' + videoId, '_blank');
-  await markVideo(videoId);
+  markVideo(videoId);
 }
 
 async function markVideo(videoId) {
