@@ -181,7 +181,7 @@ async function getVideoDetails(video) {
     console.warn(`Cannot parse duration string ${duration} for video ${videoId}`);
     return;
   }
-  let hours = result[4] ? result[4].replace('D', '') : '';
+  let hours = result[4] ? result[4].replace('H', '') : '';
   let minutes = result[5] ? result[5].replace('M', '') : '';
   let seconds = result[6] ? result[6].replace('S', '') : '';
   hours = hours ? hours + ':' : '';
