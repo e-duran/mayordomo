@@ -135,7 +135,7 @@ async function getVideosByPlaylistId(playlistId) {
     await getVideoDetails(video);
   }
   let newVideos = videos.filter(video => !video.isScheduled);
-  if (newVideos) {
+  if (newVideos.length > 0) {
     newVideos.forEach(video => allVideos[video.id] = video);
     renderChannel(newVideos);
   }
