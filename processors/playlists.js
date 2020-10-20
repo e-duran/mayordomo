@@ -92,7 +92,7 @@ async function processVideo(video, playlist, save, savedPlaylistItem) {
             video.channelId = videoInfo.snippet.channelId;
             video.channelTitle = videoInfo.snippet.channelTitle;
             video.title = videoInfo.snippet.title;
-            video.channelUrl = `URL: https://www.youtube.com/channel/${video.channelId}/videos`;
+            video.channelUrl = `https://www.youtube.com/channel/${video.channelId}/videos`;
             if (savedPlaylistItem && savedPlaylistItem.channelTitle !== video.channelTitle) {
                 video.changes += change('channelTitle');
             }
