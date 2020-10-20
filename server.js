@@ -32,8 +32,14 @@ global.getConfig = async function () {
 };
 global.log = function (res, message, error, noEnd) {
     res.write(message);
+    if (process.env.LOG_TO_CON) {
+        console.log(message);
+    }
     if (error) {
         res.write(' - ' + (error.stack ? error.stack : error));
+        if (process.env.LOG_TO_CON) {
+            console.error(' - ' + (error.stack ? error.stack : error));
+        }
         if (noEnd) {
             res.write('\r\n');
         } else {

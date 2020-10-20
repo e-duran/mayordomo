@@ -1,78 +1,113 @@
 'use strict';
 
 let log, config, youtube;
-const allVideos = [];
+const allVideosMap = {};
+const printPlaylistName = (playlist) => `${playlist.name} (${playlist.id})` 
 
 async function processVideosInPlaylist(playlist) {
+    let playlistItemStore;
     try {
         const params = {
-            part: 'snippet,contentDetails',
+            part: 'snippet,contentDetails,status',
             playlistId: playlist.id,
             maxResults: config.playlistItemsListMaxResults || 50
         };
         const playlistItemsResponse = await youtube.playlistItems.list(params);
-        var playlistItems = playlistItemsResponse.data.items;
-        if (playlistItems) {
-            for (let i = 0; i < playlistItems.length; i++) {
-                let index = config.reversePlaylistOrder ? playlistItems.length - i - 1 : i;
-                const playlistItem = playlistItems[index];
-                const videoId = playlistItem.snippet.resourceId.videoId;
-                allVideos[videoId] = {
-                    id: videoId,
-                    playlistItemId: playlistItem.id,
-                    playlistId: playlist.id,
-                    playlistName: playlist.name,
-                    resourceId: playlistItem.snippet.resourceId,
-                    note: playlistItem.contentDetails.note
-                };
-                await processVideo(videoId);
-            }
-        } else {
-            log('Error: No videos for playlist ' + playlistId);
+        const playlistItems = playlistItemsResponse.data.items;
+        if (!playlistItems || playlistItems.length === 0) {
+            log(`Warning: No videos for playlist ${printPlaylistName(playlist)}`);
+            return;
         }
+
+        log(`Processing playlist ${printPlaylistName(playlist)}`);
+        playlistItemStore = await global.getStore('playlistItems');
+        const save = async (video) => {
+            video.modifiedAt = new Date();
+            await playlistItemStore.findOneAndReplace({ playlistItemId: video.playlistItemId }, video, { returnOriginal: false, upsert: true });
+        }
+        const savedPlaylistItems = await playlistItemStore.find({ playlistId: playlist.id }).toArray();
+        savedPlaylistItems.forEach(savedPlaylistItem => {
+            const foundPlaylistItem = playlistItems.find(playlistItem => playlistItem.id === savedPlaylistItem.playlistItemId);
+            savedPlaylistItem.isInPlaylist = foundPlaylistItem !== undefined;
+            savedPlaylistItem.isMissing == !savedPlaylistItem.isInPlaylist;
+            if (!savedPlaylistItem.isInPlaylist) {
+                savedPlaylistItems.action = 'was not returned by the list operation of youtube.playlistItems';
+                log(`Video ${savedPlaylistItem.videoId} ${savedPlaylistItems.action}`);
+                save(savedPlaylistItem);
+                allVideosMap[savedPlaylistItem.playlistItemId] = savedPlaylistItem;
+            }
+        });
+
+        for (const playlistItem of playlistItems) {
+            const videoId = playlistItem.snippet.resourceId.videoId;
+            const savedPlaylistItem = savedPlaylistItems.find(item => item.playlistItemId === playlistItem.id);
+            const video = {
+                videoId: videoId,
+                playlistItemId: playlistItem.id,
+                playlistId: playlist.id,
+                playlistName: playlist.name,
+                status: playlistItem.status.privacyStatus,
+                channelId: savedPlaylistItem ? savedPlaylistItem.channelId : '',
+                channelTitle: savedPlaylistItem ? savedPlaylistItem.channelTitle : '',
+                channelUrl: savedPlaylistItem ? savedPlaylistItem.channelUrl : '',
+                title: savedPlaylistItem ? savedPlaylistItem.title : '',
+                changes: savedPlaylistItem ? savedPlaylistItem.changes : ''
+            };
+            allVideosMap[playlistItem.id] = video;
+            log(`Processing video ${videoId}`);
+            await processVideo(video, playlist, save, savedPlaylistItem);
+        }
+        playlistItemStore.client.close();
     } catch (error) {
-        log('Exception processing playlist ' + playlist.name, error, true);
+        if (playlistItemStore) {
+            playlistItemStore.client.close();
+        }
+        log(`Exception processing playlist ${printPlaylistName(playlist)}`, error, true);
     }
 }
 
-async function processVideo(videoId) {
+async function processVideo(video, playlist, save, savedPlaylistItem) {
     try {
+        delete video.action;
+        delete video.wasDeleted;
+        const videoId = video.videoId;
+        
+        if (video.status === 'private') {
+            video.isMissing = true;
+            video.action = 'was set to private';
+            log(`Video ${videoId} ${video.action}`);
+            await save(video);
+            return;
+        }
+
         const params = {
             id: videoId,
             part: 'snippet'
         };
         const response = await youtube.videos.list(params);
-        const video = allVideos[videoId];
-        if (response.data.items.length > 0 && !video.note) {
-            const videoInfo = response.data.items[0].snippet;
-            video.channelId = videoInfo.channelId;
-            video.channelTitle = videoInfo.channelTitle;
-            video.title = videoInfo.title;
-
-            let info = `Channel: ${video.channelTitle}\n`;
-            info += `Video title: ${video.title}\n`;
-            info += `URL: https://www.youtube.com/channel/${video.channelId}/videos`;
-            video.note = info;
-
-            const request = {
-                part: 'snippet,contentDetails',
-                requestBody: {
-                    id: video.playlistItemId,
-                    snippet: {
-                        playlistId: video.playlistId,
-                        resourceId: video.resourceId
-                    },
-                    contentDetails: {
-                        note: video.note
-                    }
-                }
+        if (response.data.items.length > 0) {
+            const videoInfo = response.data.items[0];
+            const today = new Date().toDateString();
+            const change = (property) => `${today} => ${property} was ${savedPlaylistItem[property]}\n`;
+            video.channelId = videoInfo.snippet.channelId;
+            video.channelTitle = videoInfo.snippet.channelTitle;
+            video.title = videoInfo.snippet.title;
+            video.channelUrl = `URL: https://www.youtube.com/channel/${video.channelId}/videos`;
+            if (savedPlaylistItem && savedPlaylistItem.channelTitle !== video.channelTitle) {
+                video.changes += change('channelTitle');
             }
-            await youtube.playlistItems.update(request);
-        } else if (response.data.items.length === 0) {
+            if (savedPlaylistItem && savedPlaylistItem.title !== video.title) {
+                video.changes += change('title');
+            }
+        } else {
             video.isMissing = true;
+            video.wasDeleted = true;
+            video.action = 'was deleted';
+            log(`Video ${videoId} ${video.action}`);
         }
+        await save(video);
     } catch (error) {
-        log('Exception processing video ' + videoId, error, true);
+        log(`Exception processing video ${videoId} in playlist ${printPlaylistName(playlist)}`, error, true);
     }
 }
 
@@ -92,25 +127,21 @@ exports.execute = async function (req, res) {
             version: 'v3',
             auth: authenticatedClient,
         });
-        const playlists = global.config.videoPlaylistsForProcessing.filter(playlist => !playlist.isDefault);
-        let maxPlaylists = Math.min(config.maxPlaylistToProcess || playlists.length, playlists.length);
-        for (let i = 0; i < maxPlaylists; i++) {
-            const playlist = playlists[i];
+
+        for (const playlist of global.config.videoPlaylistsForProcessing) {
             await processVideosInPlaylist(playlist);
         }
 
         let message = '';
-        allVideos.forEach(video => {
+        Object.values(allVideosMap).forEach(video => {
             if (video.isMissing) {
-                message += `Video ${video.id} from playlist ${playlist.name} was deleted or set to private<br>`;
+                message += `Video ${video.videoId} from playlist ${video.playlistName || playlist.name} ${video.action}<br>`;
             }
         });
-        if (message) {
+        if (message.length > 0) {
             sendMail(message);
-            res.write(message.replace('<br>', '\n'));
-        } else {
-            res.write("Processing of all playlists completed.");
         }
+        log("Processing of all playlists completed.");
         res.end();
     } catch (e) {
         log('Exception', e);
