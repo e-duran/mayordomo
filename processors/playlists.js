@@ -2,7 +2,7 @@
 
 let log, config, youtube;
 const allVideosMap = {};
-const printPlaylistName = (playlist) => `${playlist.name} (${playlist.id})` 
+const printPlaylistName = (playlist) => `${playlist.name} (${playlist.id})`;
 
 async function processVideosInPlaylist(playlist) {
     let playlistItemStore;
@@ -32,7 +32,6 @@ async function processVideosInPlaylist(playlist) {
             savedPlaylistItem.isMissing == !savedPlaylistItem.isInPlaylist;
             if (!savedPlaylistItem.isInPlaylist) {
                 savedPlaylistItems.action = 'was not returned by the list operation of youtube.playlistItems';
-                log(`Video ${savedPlaylistItem.videoId} ${savedPlaylistItems.action}`);
                 save(savedPlaylistItem);
                 allVideosMap[savedPlaylistItem.playlistItemId] = savedPlaylistItem;
             }
@@ -68,8 +67,6 @@ async function processVideosInPlaylist(playlist) {
 
 async function processVideo(video, playlist, save, savedPlaylistItem) {
     try {
-        delete video.action;
-        delete video.wasDeleted;
         const videoId = video.videoId;
         
         if (video.status === 'private') {

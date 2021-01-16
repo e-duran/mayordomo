@@ -57,9 +57,13 @@ exports.execute = async function (req, res) {
         var config = global.config;
         
         var axios = require('axios');
-        axios.defaults.headers['Referer'] = config.moviesPostProcessorReferer;
-        axios.defaults.headers['User-Agent'] = config.moviesPostProcessorUserAgent;
-        axios.defaults.headers['Response'] = config.moviesPostProcessorResponse;
+        var getRequestConfig = {
+            headers: {
+                'Referer': config.moviesPostProcessorReferer,
+                'User-Agent': config.moviesPostProcessorUserAgent,
+                'Response': config.moviesPostProcessorResponse
+            }
+        }
         var moment = require('moment-timezone');
         movieStore = await global.getStore('movies');
         var movies = await movieStore.find({ needsReview: false, nextPostProcessingDate: moment().startOf('day').toDate() }).toArray();
@@ -71,7 +75,7 @@ exports.execute = async function (req, res) {
             try {
                 var movie = movies[i];
                 var movieApiUrl = config.cinesiftUrl.format(encodeURI(movie.title), movie.year, movie.year);
-                movieResponse = await axios.get(movieApiUrl);
+                movieResponse = await axios.get(movieApiUrl, getRequestConfig);
                 movieInfo = JSON.parse(movieResponse.data);
                 if (movieInfo.length > 0) {
                     if (movieInfo.length > 1) { log(`WARNING: Movie API returned ${movieInfo.length} matches for "${movie.title}" (${movie.year})`); }
