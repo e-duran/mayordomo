@@ -88,13 +88,13 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         movie.poster = movie.poster.length ? movie.poster.attr('src').replace('/p/175/', '/p/') : null;
         movie.rated = $('.mpaa span').text();
         movie.genre = '';
-        $('a[itemprop="genre"]').each(function(genre) {
+        $('a[itemprop="genre"]').each(function() {
            movie.genre += $(this).text().trim() + ', ';
         });
         if (movie.genre) { movie.genre = movie.genre.substr(0, movie.genre.length - 2); }
         movie.duration = $('p[itemprop="duration"] strong').text().trim();
         movie.plot = $('p[itemprop="description"]').text().trim();
-        let releaseParagraph = $('.fa.fa-calendar-o.fa-fw').eq(0).parent().next();
+        let releaseParagraph = $('.fa.fa-calendar-o.fa-fw').eq(0).parent().parent().next();
         let releaseScope = releaseParagraph.contents()[1].data.trim();     // Cheerio uses data instead of the textContent property of the Node interface (DOM)
         movie.releaseScope = releaseScope.substr(1, releaseScope.length - 2);
         if (movie.releaseScope.startsWith('(') && movie.releaseScope.endsWith(')')) {
