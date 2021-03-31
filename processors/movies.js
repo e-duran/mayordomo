@@ -92,7 +92,7 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
            movie.genre += $(this).text().trim() + ', ';
         });
         if (movie.genre) { movie.genre = movie.genre.substr(0, movie.genre.length - 2); }
-        movie.duration = $('p[itemprop="duration"] strong').text().trim();
+        movie.duration = $('span[itemprop="duration"] strong').eq(0).text().trim();
         movie.plot = $('p[itemprop="description"]').text().trim();
         let releaseParagraph = $('.fa.fa-calendar-o.fa-fw').eq(0).parent().parent().next();
         let releaseScope = releaseParagraph.contents()[1].data.trim();     // Cheerio uses data instead of the textContent property of the Node interface (DOM)
