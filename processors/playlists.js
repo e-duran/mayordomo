@@ -136,7 +136,7 @@ exports.execute = async function (req, res) {
             }
         });
         if (message.length > 0) {
-            sendMail(message);
+            await sendMail(message);
         }
         log("Processing of all playlists completed.");
         res.end();
@@ -145,19 +145,12 @@ exports.execute = async function (req, res) {
     }
 };
 
-function sendMail(message) {
-    const Mailgun = require('mailgun-js');
-    const mailgun = new Mailgun({ apiKey: config.mailgunApiKey, domain: config.mailgunDomain });
-
+async function sendMail(message) {
     var mail = {
         from: config.stockWatchListFrom,
         to: config.stockWatchListTo,
         subject: `Videos in playlists where deleted or set to private`,
         html: message
     };
-    mailgun.messages().send(mail, function (error) {
-        if (error) {
-            log('Error while sending mail', error);
-        }
-    });
+    await global.sendMail(config, mail, log);
 }

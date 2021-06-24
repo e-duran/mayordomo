@@ -62,6 +62,18 @@ global.jsonApiError = function (res, store, e, status, title, detail, source) {
     res.status(status || 500);
     res.json({ errors: [ error ] });
 };
+global.sendMail = async function (config, mail, log) {
+    const formData = require('form-data');
+    const Mailgun = require('mailgun.js');
+    const mailgun = new Mailgun(formData);
+    const mg = mailgun.client({ username: 'api', key: config.mailgunApiKey });
+
+    try {
+        await mg.messages.create(config.mailgunDomain, mail);
+    } catch (error) {
+        log('Error while sending mail', error);
+    }
+}
 
 var port = process.env.PORT || 8080;
 var ip = process.env.IP   || '0.0.0.0';

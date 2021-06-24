@@ -30,20 +30,14 @@ function updateMovie(movie, movieInfo, config) {
     return movie;
 }
 
-function sendMail(config, body, log) {
-    var Mailgun = require('mailgun-js');
-    var mailgun = new Mailgun({apiKey: config.mailgunApiKey, domain: config.mailgunDomain});
+async function sendMail(config, body, log) {
     var mail = {
         from: config.stockWatchListFrom,
         to: config.stockWatchListTo,
         subject: `Error in movies post-processing`,
         html: body
     };
-    mailgun.messages().send(mail, function (error, body) {
-        if (error) {
-            log('Error while sending mail', error);
-        }
-    });
+    await global.sendMail(config, mail, log);
 }
 
 exports.execute = async function (req, res) {
@@ -99,7 +93,7 @@ exports.execute = async function (req, res) {
             }
         }
         if (lastError) {
-            sendMail(config, lastError, log);
+            await sendMail(config, lastError, log);
         }
         movieStore.client.close();
         log(`Finished post-processing of ${movies.length} movies.`);
