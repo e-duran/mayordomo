@@ -52,6 +52,9 @@ exports.execute = async function (req, res) {
                 movie.nextPostProcessingDate = existingMovie.nextPostProcessingDate;
                 movie.remainingPostProcessingTimes = existingMovie.remainingPostProcessingTimes;
                 movie.isInteresting = !!existingMovie.isInteresting;
+                movie.needsReview = !!existingMovie.needsReview;
+                movie.acquired = !!existingMovie.acquired;
+                movie.seen = !!existingMovie.seen;
                 movie._id = existingMovie._id;
                 result = await movieStore.replaceOne(filterByUrl, movie);
             } else {
