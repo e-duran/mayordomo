@@ -26,7 +26,7 @@ exports.register = function (app) {
             };
             notificationStore = await global.getStore('notifications');
             let result = await notificationStore.insertOne(notification);
-            res.json(result.ops[0]);
+            res.json(result.insertedId);
             notificationStore.client.close();
         } catch (e) {
             global.jsonApiError(res, e, notificationStore);

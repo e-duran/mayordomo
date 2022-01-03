@@ -19,7 +19,7 @@
     "mailgun.js": "^3.4.0",
     "method-override": "^2.3.10",
     "moment-timezone": "^0.5.14",
-    "mongodb": "^3.6.0",
+    "mongodb": "^4.2.2",
     "morgan": "^1.9.1",
     "open": "^7.0.3",
     "rss": "^1.2.2",

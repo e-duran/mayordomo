@@ -45,7 +45,7 @@ exports.register = function (app) {
                 res.json(result.value);
             } else {
                 result = await videoStore.insertOne(video);
-                res.json(result.ops[0]);
+                res.json(result.insertedId);
             }
             videoStore.client.close();
         } catch (e) {

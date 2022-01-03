@@ -63,7 +63,7 @@ exports.execute = async function (req, res) {
                 movie.remainingPostProcessingTimes = 5;
                 result = await movieStore.insertOne(movie);
             }
-            action = result.result.ok ? action : 'not stored';
+            action = result.acknowledged ? action : 'not stored';
             var needsReview = movie.needsReview ? ' and its info needs to be reviewed' : '';
             log(`Movie "${movie.title}" ${action}${needsReview}`);
         }

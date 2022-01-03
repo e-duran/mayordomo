@@ -15,7 +15,7 @@ Date.prototype.isValid = function () {
 
 global.getStore = async function (collectionName) {
     const MongoClient = require('mongodb').MongoClient;
-    const client = await MongoClient.connect(process.env.MONGO_URL, { useUnifiedTopology: true });
+    const client = await MongoClient.connect(process.env.MONGO_URL);
     const db = client.db('mayordomo');
     if (collectionName) {
         const collection = db.collection(collectionName);
