@@ -95,14 +95,14 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         $('a[itemprop="genre"]').each(function() {
            movie.genre += $(this).text().trim() + ', ';
         });
-        if (movie.genre) { movie.genre = movie.genre.substr(0, movie.genre.length - 2); }
+        if (movie.genre) { movie.genre = movie.genre.substring(0, movie.genre.length - 2); }
         movie.duration = $('span[itemprop="duration"] strong').eq(0).text().trim();
         movie.plot = $('p[itemprop="description"]').text().trim();
         let releaseParagraph = $('.fa.fa-calendar-o.fa-fw').eq(0).parent().parent().next();
         let releaseScope = releaseParagraph.contents()[1].data.trim();     // Cheerio uses data instead of the textContent property of the Node interface (DOM)
-        movie.releaseScope = releaseScope.substr(1, releaseScope.length - 2);
+        movie.releaseScope = releaseScope.substring(1, releaseScope.length - 1);
         if (movie.releaseScope.startsWith('(') && movie.releaseScope.endsWith(')')) {
-            movie.releaseScope = releaseScope.substr(1, releaseScope.length - 2);
+            movie.releaseScope = releaseScope.substring(1, releaseScope.length - 1);
         }
         let releaseDate = releaseParagraph.find('a').text();
         movie.releasedDate = new Date(releaseDate);
@@ -111,7 +111,7 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         $('b[itemprop="actor"]').each(function(actor) {
            movie.actors += $(this).text().trim() + ', ';
         });
-        if (movie.actors) { movie.actors = movie.actors.substr(0, movie.actors.length - 2); }
+        if (movie.actors) { movie.actors = movie.actors.substring(0, movie.actors.length - 2); }
         movie.director = $('p[itemprop="director"] a').text().trim().replace(/  /g, ', ');
         movie.writer = $('.credits').eq(0).children('a').text().trim().replace(/  /g, ', ');
         
@@ -152,7 +152,8 @@ async function getImdbId(log, axios, cheerio, movie) {
         var results = $('.result_text');
         for (var i = 0; i < Math.min(results.length, 5); i++) {
             var resultText = $(results[i]).text();
-            var year = resultText.substr(resultText.lastIndexOf('(') + 1, 4);
+            var startYear = resultText.lastIndexOf('(') + 1;
+            var year = resultText.substring(startYear, startYear + 4);
             if (isNaN(year)) continue;
             if (year >= (movie.year - 2)) {
                 var imdbUrl = $(results[i]).find('a').attr('href');

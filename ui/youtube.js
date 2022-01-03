@@ -215,8 +215,8 @@ function renderChannel(videos) {
 // Create a listing for a video.
 function renderVideo(video, row) {
   let dateString = video.publishedAtDate.toDateString() + ' ';
-  let time = video.publishedAtDate.toTimeString().substr(0, 8);
-  dateString += time.charAt(0) == 0 ? time.substr(1) : time;
+  let time = video.publishedAtDate.toTimeString().substring(0, 8);
+  dateString += time.charAt(0) == 0 ? time.substring(1) : time;
   let openHandler = `onclick="openVideo('${video.id}')"`;
   let markHandler = `onclick="markVideo('${video.id}')"`;
   let infoHandler = `onclick="logVideoInfo('${video.id}')"`;
@@ -284,7 +284,7 @@ function createResource(properties) {
   var normalizedProps = properties;
   for (var p in properties) {
     var value = properties[p];
-    if (p && p.substr(-2, 2) == '[]') {
+    if (p && p.length > 1 && p.substring(p.length - 2) == '[]') {
       var adjustedName = p.replace('[]', '');
       if (value) {
         normalizedProps[adjustedName] = value.split(',');
