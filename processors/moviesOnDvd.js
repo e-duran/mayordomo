@@ -68,7 +68,9 @@ exports.execute = async function (req, res) {
             var movieInfo = null;
             try {
                 var movie = movies[i];
-                var movieApiUrl = config.cinesiftUrl.format(encodeURI(movie.title), movie.year, movie.year);
+                let startYear = movie.year - 1 || new Date().getFullYear() - 2;
+                let endYear = movie.year || new Date().getFullYear();
+                var movieApiUrl = config.cinesiftUrl.format(encodeURI(movie.title), startYear, endYear);
                 movieResponse = await axios.get(movieApiUrl, getRequestConfig);
                 movieInfo = JSON.parse(movieResponse.data);
                 if (movieInfo.length > 0) {
