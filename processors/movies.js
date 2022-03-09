@@ -52,7 +52,7 @@ exports.execute = async function (req, res) {
                 movie.nextPostProcessingDate = existingMovie.nextPostProcessingDate;
                 movie.remainingPostProcessingTimes = existingMovie.remainingPostProcessingTimes;
                 movie.isInteresting = !!existingMovie.isInteresting;
-                movie.needsReview = !!existingMovie.needsReview;
+                movie.needsReview = (!!existingMovie.needsReview) == false ? false : movie.needsReview;
                 movie.acquired = !!existingMovie.acquired;
                 movie.seen = !!existingMovie.seen;
                 movie._id = existingMovie._id;
@@ -90,7 +90,7 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         movie.title = movieTitle;
         movie.poster = $('img[itemprop="image"]');
         movie.poster = movie.poster.length ? movie.poster.attr('src').replace('/p/175/', '/p/') : null;
-        movie.rated = $('.mpaa span').text();
+        movie.rated = $('.rating-box').text().trim();
         movie.genre = '';
         $('a[itemprop="genre"]').each(function() {
            movie.genre += $(this).text().trim() + ', ';
@@ -99,16 +99,16 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         movie.duration = $('span[itemprop="duration"] strong').eq(0).text().trim();
         movie.plot = $('p[itemprop="description"]').text().trim();
         let releaseParagraph = $('.fa.fa-calendar-o.fa-fw').eq(0).parent().parent().next();
-        let releaseScope = releaseParagraph.contents()[1].data.trim();     // Cheerio uses data instead of the textContent property of the Node interface (DOM)
+        let releaseScope = releaseParagraph.contents().eq(-1).text().trim();
         movie.releaseScope = releaseScope.substring(1, releaseScope.length - 1);
         if (movie.releaseScope.startsWith('(') && movie.releaseScope.endsWith(')')) {
             movie.releaseScope = releaseScope.substring(1, releaseScope.length - 1);
         }
-        let releaseDate = releaseParagraph.find('a').text();
-        movie.releasedDate = new Date(releaseDate);
-        if (movie.releasedDate.isValid()) movie.year = movie.releasedDate.getFullYear();
+        let releaseDate = releaseParagraph.find('a').eq(0).text();
+        movie.releasedDate = releaseDate ? new Date(releaseDate) : moment().startOf('week').add(5, 'days').toDate();
+        movie.year = movie.releasedDate.isValid() ? movie.releasedDate.getFullYear() : new Date().getFullYear();
         movie.actors = '';
-        $('b[itemprop="actor"]').each(function(actor) {
+        $('b[itemprop="actor"]').each(function() {
            movie.actors += $(this).text().trim() + ', ';
         });
         if (movie.actors) { movie.actors = movie.actors.substring(0, movie.actors.length - 2); }
@@ -122,19 +122,11 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
             movie.imdbId = moviePageData.substring(imdbIdStartIndex, moviePageData.indexOf('/', imdbIdStartIndex));
             movie.hasCanonicalImdbId = true;
         }
-        movie.needsReview = false;
+
+        movie.isInteresting = false;
         movie.acquired = false;
         movie.seen = false;
-        
-        if (isNaN(movie.year)) {
-            movie.year = null;
-        }
-        if (movie.releasedDate && !movie.releasedDate.isValid()) {
-            movie.releasedDate = null;
-        }
-        if (!movie.year || !movie.releasedDate || !movie.poster || !movie.plot || !movie.actors) {
-            movie.needsReview = true;
-        }
+        movie.needsReview = !movie.plot || !movie.actors;
     } catch (e) {
         log(`Error getting details for movie ${movieTitle}`);
         throw e;
