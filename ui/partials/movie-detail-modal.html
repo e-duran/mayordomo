@@ -2,17 +2,17 @@
   <button type="button" class="close" data-dismiss="modal" aria-label="Close" ng-click="closeMovieDetailsModal()"><span aria-hidden="true">&times;</span></button>
   <h3 class="modal-title" id="movieDetailsLabel">
     {{ movie.title }}
-    <a ng-if="movie.webSite" href="{{ movie.webSite }}" target="_blank" title="Open movie's Web site in new tab">
+    <a ng-if="movie.webSite" href="{{ movie.webSite }}" target="_blank" title="Open movie's Web site in new tab" rel="noopener noreferrer">
       <span class="hor-space small glyphicon glyphicon-globe"></span>
     </a>
-    <a ng-if="movie.movieInsiderUrl" href="{{ movie.movieInsiderUrl }}" target="_blank" title="Open Movie Insider's movie page in new tab">
+    <a ng-if="movie.movieInsiderUrl" href="{{ movie.movieInsiderUrl }}" target="_blank" title="Open Movie Insider's movie page in new tab" rel="noopener noreferrer">
       <span class="hor-space small glyphicon glyphicon-globe"></span>
     </a>
   </h3>
 </div>
 <div class="modal-body">
   <div class="row">
-    <div class="col-xs-2"><a href="{{ movie.poster.replace('_SX300', '') }}" target="_blank"><img ng-src="{{ movie.poster }}" class="img-responsive"></a></div>
+    <div class="col-xs-2"><a href="{{ movie.poster.replace('_SX300', '') }}" target="_blank" rel="noopener noreferrer"><img ng-src="{{ movie.poster }}" class="img-responsive"></a></div>
     <div class="col-xs-10">{{ movie.plot }}</div>
   </div>
   <div class="separator"></div>

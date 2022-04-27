@@ -82,9 +82,14 @@ var morgan = require('morgan');
 var bodyParser = require('body-parser');
 var methodOverride = require('method-override');
 var favicon = require('serve-favicon');
+var rateLimit = require('express-rate-limit');
 var app = express();
 var dateToken = process.env.LOG_DATE === 'true' ? '[:date[iso]] ' : '';
 var logTokens = `${dateToken}":method :url" :status :res[content-length] ":response-time ms" ":referrer" ":user-agent"`;
+var limiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 5
+  });
 app.use(morgan(logTokens));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -147,6 +152,7 @@ var supercutsProcessor = require('./processors/supercuts');
 app.get(processorsMap.supercuts, supercutsProcessor.execute);
 
 var playlistsProcessor = require('./processors/playlists');
+app.use(processorsMap.playlists, limiter); // Add rate limiter to routes which depend on authorization
 app.get(processorsMap.playlists, playlistsProcessor.execute);
 
 var taskProcessor = require('./processors/task.js');
