@@ -14,7 +14,7 @@
   <body>
     <div id="login-container" class="pre-auth">
       This application requires access to your YouTube account.
-      Please <a href="#" id="login-link">login</a> to continue.
+      Please select an account in the pop-up dialog to continue.
     </div>
     <div id ="video-container"></div>
     <div class="button-container">
@@ -27,11 +27,9 @@
     </div>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
-    <script type="text/javascript" src="youtube.js"></script>
-    <script type="text/javascript" src="auth.js"></script>
-    <script async defer src="https://apis.google.com/js/api.js" 
-        onload="this.onload=function(){};handleClientLoad()" 
-        onreadystatechange="if (this.readyState === 'complete') this.onload()">
-    </script>
+    <script src="youtube.js"></script>
+    <script src="auth.js"></script>
+    <script async defer src="https://apis.google.com/js/api.js" onload="onGoogleApiLoad()" onerror="onGoogleApiLoadError(event)"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="onGoogleIdentityLoad()" onerror="onGoogleIdentityLoadError(event)"></script>
   </body>
 </html>

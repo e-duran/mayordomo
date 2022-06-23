@@ -9,8 +9,8 @@ let allVideos;
 async function handleAPILoaded() {
   watchedVideos = await $.ajax({ url: '/api/videos', cache: false });
   let playlists = await $.ajax({ url: '/api/videos/playlists', cache: false });
-  let params = new URLSearchParams(location.search);
-  let requestedPlaylistId = params.get('playlistId');
+  let urlSearchParams = new URLSearchParams(location.search);
+  let requestedPlaylistId = urlSearchParams.get('playlistId');
   let requestedPlaylist = playlists.find(x => requestedPlaylistId ? x.id === requestedPlaylistId : x.isDefault);
 
   let playlistsControl = $("#playlists");
@@ -24,7 +24,8 @@ async function handleAPILoaded() {
       change: (event, data) => {
         const playlistId = data.item.value;
         if (!playlistId) return;
-        window.location = `${location.protocol}//${location.host}${location.pathname}?playlistId=${playlistId}`;
+        urlSearchParams.set('playlistId', playlistId);
+        window.location.search = urlSearchParams.toString();
       },
       width: 140
     });
@@ -277,71 +278,4 @@ function nextPage() {
 // Retrieve the previous page of videos in the playlist.
 function previousPage() {
   requestVideoPlaylist(lastPlaylistId, prevPageToken);
-}
-
-function createResource(properties) {
-  var resource = {};
-  var normalizedProps = properties;
-  for (var p in properties) {
-    var value = properties[p];
-    if (p && p.length > 1 && p.substring(p.length - 2) == '[]') {
-      var adjustedName = p.replace('[]', '');
-      if (value) {
-        normalizedProps[adjustedName] = value.split(',');
-      }
-      delete normalizedProps[p];
-    }
-  }
-  for (var p in normalizedProps) {
-    // Leave properties that don't have values out of inserted resource.
-    if (normalizedProps.hasOwnProperty(p) && normalizedProps[p]) {
-      var propArray = p.split('.');
-      var ref = resource;
-      for (var pa = 0; pa < propArray.length; pa++) {
-        var key = propArray[pa];
-        if (pa == propArray.length - 1) {
-          ref[key] = normalizedProps[p];
-        } else {
-          ref = ref[key] = ref[key] || {};
-        }
-      }
-    }
-  }
-  return resource;
-}
-
-function removeEmptyParams(params) {
-  for (var p in params) {
-    if (!params[p] || params[p] == 'undefined') {
-      delete params[p];
-    }
-  }
-  return params;
-}
-
-function executeRequest(request) {
-  request.execute(function (response) {
-    console.log(response);
-  });
-}
-
-function buildApiRequest(requestMethod, path, params, properties) {
-  params = removeEmptyParams(params);
-  var request;
-  if (properties) {
-    var resource = createResource(properties);
-    request = gapi.client.request({
-      'body': resource,
-      'method': requestMethod,
-      'path': path,
-      'params': params
-    });
-  } else {
-    request = gapi.client.request({
-      'method': requestMethod,
-      'path': path,
-      'params': params
-    });
-  }
-  executeRequest(request);
 }
