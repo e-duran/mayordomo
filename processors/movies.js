@@ -100,7 +100,7 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
         movie.plot = $('p[itemprop="description"]').text().trim();
         let releaseParagraph = $('.fa.fa-calendar-o.fa-fw').eq(0).parent().parent().next();
         let releaseScope = releaseParagraph.contents().eq(-1).text().trim();
-        movie.releaseScope = releaseScope.substring(1, releaseScope.length - 1);
+        movie.releaseScope = releaseScope;
         if (movie.releaseScope.startsWith('(') && movie.releaseScope.endsWith(')')) {
             movie.releaseScope = releaseScope.substring(1, releaseScope.length - 1);
         }
