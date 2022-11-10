@@ -1,7 +1,7 @@
 'use strict';
 
 let log, config, youtube;
-const allVideosMap = {};
+let allVideosMap = {};
 const printPlaylistName = (playlist) => `${playlist.name} (${playlist.id})`;
 
 async function processVideosInPlaylist(playlist) {
@@ -125,6 +125,7 @@ exports.execute = async function (req, res) {
             auth: authenticatedClient,
         });
 
+        allVideosMap = {};
         for (const playlist of global.config.videoPlaylistsForProcessing) {
             await processVideosInPlaylist(playlist);
         }
