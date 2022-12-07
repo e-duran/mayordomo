@@ -11,7 +11,13 @@ exports.execute = async function (req, res) {
         var config = global.config;
         
         var axios = require('axios');
-        var movieCalendar = await axios.get(config.movieCalendarUrl);
+        var getRequestConfig = {
+            headers: {
+                'User-Agent': config.moviesPostProcessorUserAgent,
+                'Accept': 'text/html'
+            }
+        }
+        var movieCalendar = await axios.get(config.movieCalendarUrl, getRequestConfig);
         
         var cheerio = require('cheerio');
         var $ = cheerio.load(movieCalendar.data);
@@ -29,10 +35,10 @@ exports.execute = async function (req, res) {
         
         var movies = [];
         for (let i = 0; i < movieUrls.length; i++) {
-            let movie = await getMovieFromPage(log, axios, cheerio, movieUrls[i], movieTitles[i]);
+            let movie = await getMovieFromPage(log, axios, getRequestConfig, cheerio, movieUrls[i], movieTitles[i]);
             if (!movie) continue;
             if (!movie.imdbId) {
-                movie = await getImdbId(log, axios, cheerio, movie);
+                movie = await getImdbId(log, axios, getRequestConfig, cheerio, movie);
             }
             movies.push(movie);
         }
@@ -79,9 +85,9 @@ exports.execute = async function (req, res) {
     }
 };
 
-async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
+async function getMovieFromPage(log, axios, getRequestConfig, cheerio, moviePageUrl, movieTitle) {
     try {
-        var moviePageResponse = await axios.get(moviePageUrl);
+        var moviePageResponse = await axios.get(moviePageUrl, getRequestConfig);
         var moviePageData = moviePageResponse.data;
         var movie = {};
         var $ = cheerio.load(moviePageData);
@@ -135,11 +141,11 @@ async function getMovieFromPage(log, axios, cheerio, moviePageUrl, movieTitle) {
     return movie;
 }
 
-async function getImdbId(log, axios, cheerio, movie) {
+async function getImdbId(log, axios, getRequestConfig, cheerio, movie) {
     if (!movie.year) return movie;
     try {
         var searchUrl = `https://www.imdb.com/find?q=${encodeURI(movie.title)}&s=tt&ttype=ft&exact=true`;
-        var searchResponse = await axios.get(searchUrl);
+        var searchResponse = await axios.get(searchUrl, getRequestConfig);
         var $ = cheerio.load(searchResponse.data);
         var results = $('.result_text');
         for (var i = 0; i < Math.min(results.length, 5); i++) {
