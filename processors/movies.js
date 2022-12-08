@@ -79,11 +79,23 @@ exports.execute = async function (req, res) {
         res.end();
     } catch (e) {
         log('Exception', e);
+        const message = 'Unhandled exception - ' + (e.stack ? e.stack : e);
+        await sendMail(message);
         if (movieStore) {
             movieStore.client.close();
         }
     }
 };
+
+async function sendMail(message) {
+    var mail = {
+        from: config.stockWatchListFrom,
+        to: config.stockWatchListTo,
+        subject: `Error in processing of movies`,
+        html: message
+    };
+    await global.sendMail(config, mail, log);
+}
 
 async function getMovieFromPage(log, axios, getRequestConfig, cheerio, moviePageUrl, movieTitle) {
     try {
@@ -147,11 +159,9 @@ async function getImdbId(log, axios, getRequestConfig, cheerio, movie) {
         var searchUrl = `https://www.imdb.com/find?q=${encodeURI(movie.title)}&s=tt&ttype=ft&exact=true`;
         var searchResponse = await axios.get(searchUrl, getRequestConfig);
         var $ = cheerio.load(searchResponse.data);
-        var results = $('.result_text');
+        var results = $('.ipc-metadata-list-summary-item');
         for (var i = 0; i < Math.min(results.length, 5); i++) {
-            var resultText = $(results[i]).text();
-            var startYear = resultText.lastIndexOf('(') + 1;
-            var year = resultText.substring(startYear, startYear + 4);
+            var year = $(results[i]).find('label.ipc-metadata-list-summary-item__li').first().text();
             if (isNaN(year)) continue;
             if (year >= (movie.year - 2)) {
                 var imdbUrl = $(results[i]).find('a').attr('href');
