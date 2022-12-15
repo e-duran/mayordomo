@@ -56,7 +56,7 @@ global.jsonApiError = function (res, store, e, status, title, detail, source) {
     var error = {
         status: status || 500,
         title: title || 'Unhandled exception',
-        detail: detail || e.stack,
+        detail: detail || e?.stack,
         source: source
     };
     res.status(status || 500);

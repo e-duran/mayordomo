@@ -11,7 +11,7 @@ exports.register = function (app) {
             videoStore.client.close();
             res.json(videos);
         } catch (e) {
-            global.jsonApiError(res, e, videoStore);
+            global.jsonApiError(res, videoStore, e);
         }
     });
 
@@ -49,7 +49,7 @@ exports.register = function (app) {
             }
             videoStore.client.close();
         } catch (e) {
-            global.jsonApiError(res, e, videoStore);
+            global.jsonApiError(res, videoStore, e);
         }
     });
     
@@ -59,7 +59,7 @@ exports.register = function (app) {
             var playlists = global.config.videoPlaylists;
             res.json(playlists);
         } catch (e) {
-            global.jsonApiError(res, e);
+            global.jsonApiError(res, null, e);
         }
     });
     
@@ -68,7 +68,7 @@ exports.register = function (app) {
             if (!global.config) global.config = await global.getConfig(); 
             res.json(global.config.videoClientId);
         } catch (e) {
-            global.jsonApiError(res, e);
+            global.jsonApiError(res, null, e);
         }
     });
 };

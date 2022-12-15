@@ -29,7 +29,7 @@ exports.register = function (app) {
             res.json(result.insertedId);
             notificationStore.client.close();
         } catch (e) {
-            global.jsonApiError(res, e, notificationStore);
+            global.jsonApiError(res, notificationStore, e);
         }
     });
 
@@ -44,7 +44,7 @@ exports.register = function (app) {
             notificationStore.client.close();
             res.json(notifications);
         } catch (e) {
-            global.jsonApiError(res, e, notificationStore);
+            global.jsonApiError(res, notificationStore, e);
         }
     });
 };

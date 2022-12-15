@@ -11,7 +11,7 @@ exports.register = function (app) {
             movieStore.client.close();
             res.json(movies);
         } catch (e) {
-            global.jsonApiError(res, movieStore);
+            global.jsonApiError(res, movieStore, e);
         }
     });
 

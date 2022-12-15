@@ -13,7 +13,7 @@ exports.register = function (app) {
             logsStore.client.close();
             res.json(logs);
         } catch (e) {
-            global.jsonApiError(res, logsStore);
+            global.jsonApiError(res, logsStore, e);
         }
     });
 };
