@@ -43,6 +43,25 @@ exports.execute = async function (req, res) {
             movies.push(movie);
         }
         
+        const keyPropertiesErrorMessages = [];
+        const keyProperties = ['poster', 'rated', 'genre', 'duration', 'releaseScope', 'releasedDate', 'director', 'writer', 'needsReview'];
+        let hasSameKeyValues = false;
+        for (const keyProperty of keyProperties) {
+            const allValues = movies.map(movie => movie[keyProperty]);
+            const allValuesAreSame = allValues.every(value => value === allValues[0]);
+            hasSameKeyValues = hasSameKeyValues || allValuesAreSame;
+            if (allValuesAreSame) {
+                const message = `ERROR: Property ${keyProperty} is the same for all movies.`;
+                keyPropertiesErrorMessages.push(message);
+                log(message);
+            }
+        }
+        if (hasSameKeyValues) {
+            const message = 'There is a problem with the query selectors used to parse the following properties: <br>' + keyPropertiesErrorMessages.join('<br>');
+            await sendMail(message);
+            movies = [];
+        }
+
         var moment = require('moment-timezone');
         movieStore = await global.getStore('movies');
         for (let i = 0; i < movies.length; i++) {
@@ -116,7 +135,7 @@ async function getMovieFromPage(log, axios, getRequestConfig, cheerio, moviePage
         if (movie.genre) { movie.genre = movie.genre.substring(0, movie.genre.length - 2); }
         movie.duration = $('span[itemprop="duration"] strong').eq(0).text().trim();
         movie.plot = $('p[itemprop="description"]').text().trim();
-        let releaseParagraph = $('.fa.fa-calendar-o.fa-fw').eq(0).parent().parent().next();
+        let releaseParagraph = $('.fa.fa-calendar-o.fa-fw').eq(1).parent().parent().next();
         let releaseScope = releaseParagraph.contents().eq(-1).text().trim();
         movie.releaseScope = releaseScope;
         if (movie.releaseScope.startsWith('(') && movie.releaseScope.endsWith(')')) {

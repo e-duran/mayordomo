@@ -5,11 +5,11 @@ exports.execute = async function (req, res) {
     
     let movieStore;
     const id = req.params.id;
-    const ObjectID = require('mongodb').ObjectID;
+    const ObjectId = require('mongodb').ObjectId;
     
     try {
         movieStore = await global.getStore('movies');
-        var result = await movieStore.updateOne({ _id: new ObjectID(id)}, { $set: { isInteresting: true } });
+        var result = await movieStore.updateOne({ _id: new ObjectId(id)}, { $set: { isInteresting: true } });
         movieStore.client.close();
         var message = result.matchedCount == 1 ? `Movie ${id} was marked as interesting.` : 'Cannot find movie with ID ' + id;
         res.send(message);

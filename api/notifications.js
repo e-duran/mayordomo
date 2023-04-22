@@ -36,10 +36,10 @@ exports.register = function (app) {
     app.get(basePath, async function (req, res) {
         let notificationStore;
         const lastObjectId = req.query.lastObjectId;
-        const ObjectID = require('mongodb').ObjectID;
+        const ObjectId = require('mongodb').ObjectId;
         try {
             notificationStore = await global.getStore('notifications');
-            const cursor = lastObjectId ? notificationStore.find({_id: { $lt: new ObjectID(lastObjectId)}}) : notificationStore.find();
+            const cursor = lastObjectId ? notificationStore.find({_id: { $lt: new ObjectId(lastObjectId)}}) : notificationStore.find();
             let notifications = await cursor.sort({_id: -1}).limit(100).toArray();
             notificationStore.client.close();
             res.json(notifications);

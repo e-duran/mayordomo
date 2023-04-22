@@ -18,8 +18,8 @@ exports.register = function (app) {
     app.put(basePath + '/:id', async function (req, res) {
         var movieStore;
         try {
-            var ObjectID = require('mongodb').ObjectID;
-            var movieID = new ObjectID(req.params.id);
+            var ObjectId = require('mongodb').ObjectId;
+            var movieID = new ObjectId(req.params.id);
             var updated = {
                 isInteresting: req.body.isInteresting,
                 acquired: req.body.acquired,
