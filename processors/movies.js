@@ -9,7 +9,10 @@ exports.execute = async function (req, res) {
     try {
         if (!global.config) global.config = await global.getConfig(); 
         var config = global.config;
-        
+        let isRerun = false;
+        var movieTitles = [],
+            movieUrls = []; 
+    
         var axios = require('axios');
         var getRequestConfig = {
             headers: {
@@ -17,20 +20,30 @@ exports.execute = async function (req, res) {
                 'Accept': 'text/html'
             }
         }
-        var movieCalendar = await axios.get(config.movieCalendarUrl, getRequestConfig);
-        
         var cheerio = require('cheerio');
-        var $ = cheerio.load(movieCalendar.data);
-        var movieTitles = [],
-            movieUrls = [];
-        $('h3 > a').each(function (i, anchor) {
-            movieUrls[i] = $(anchor).attr('href');
-            movieTitles[i] = $(anchor).text().trim();
-        });
-        if (movieUrls.length > 0) {
-            log(`Got list of ${movieUrls.length} movies opening this week`);
+        let existingMovies = [];
+
+        if (req.query.from) {
+            isRerun = true;
+            movieStore = await global.getStore('movies');
+            const filter = { createdAt: { $gt: new Date(req.query.from) } };
+            existingMovies = await movieStore.find(filter).toArray();
+            existingMovies.forEach(movie => {
+                movieTitles.push(movie.title);
+                movieUrls.push(movie.movieInsiderUrl);
+            });
         } else {
-            log('Error: Initial media-heading selector did not return any nodes');
+            var movieCalendar = await axios.get(config.movieCalendarUrl, getRequestConfig);
+            var $ = cheerio.load(movieCalendar.data);
+            $('h3 > a').each(function (i, anchor) {
+                movieUrls[i] = $(anchor).attr('href');
+                movieTitles[i] = $(anchor).text().trim();
+            });
+            if (movieUrls.length > 0) {
+                log(`Got list of ${movieUrls.length} movies opening this week`);
+            } else {
+                log('Error: Initial media-heading selector did not return any nodes');
+            }
         }
         
         var movies = [];
@@ -44,7 +57,7 @@ exports.execute = async function (req, res) {
         }
         
         const keyPropertiesErrorMessages = [];
-        const keyProperties = ['poster', 'rated', 'genre', 'duration', 'releaseScope', 'releasedDate', 'director', 'writer', 'needsReview'];
+        const keyProperties = ['poster', 'rated', 'genre', 'duration', 'releaseScope', 'releasedDate', 'director', 'writer', 'needsReview','imdbId'];
         let hasSameKeyValues = false;
         for (const keyProperty of keyProperties) {
             const allValues = movies.map(movie => movie[keyProperty]);
@@ -64,13 +77,13 @@ exports.execute = async function (req, res) {
         }
 
         var moment = require('moment-timezone');
-        movieStore = await global.getStore('movies');
+        movieStore = movieStore || await global.getStore('movies');
         for (let i = 0; i < movies.length; i++) {
             let movie = movies[i];
             var action = 'created';
             var result = null;
             var filterByUrl = { movieInsiderUrl: movie.movieInsiderUrl };
-            var existingMovie = await movieStore.findOne(filterByUrl);
+            var existingMovie = existingMovies[i] || await movieStore.findOne(filterByUrl);
             if (existingMovie) {
                 action = 'updated';
                 movie.modifiedAt = new Date();
@@ -181,7 +194,7 @@ async function getImdbId(log, axios, getRequestConfig, cheerio, movie) {
         var $ = cheerio.load(searchResponse.data);
         var results = $('.ipc-metadata-list-summary-item');
         for (var i = 0; i < Math.min(results.length, 5); i++) {
-            var year = $(results[i]).find('label.ipc-metadata-list-summary-item__li').first().text();
+            var year = $(results[i]).find('.ipc-metadata-list-summary-item__li').first().text();
             if (isNaN(year)) continue;
             if (year >= (movie.year - 2)) {
                 var imdbUrl = $(results[i]).find('a').attr('href');
