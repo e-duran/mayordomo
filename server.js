@@ -43,6 +43,7 @@ global.log = function (res, message, error, noEnd) {
         if (noEnd) {
             res.write('\r\n');
         } else {
+            res.status(500);
             res.end();
         }
     } else {

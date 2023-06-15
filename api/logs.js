@@ -9,7 +9,7 @@ exports.register = function (app) {
         var logsStore;
         try {
             logsStore = await global.getStore('logs');
-            var logs = await logsStore.find({ category: req.query.category }).sort('timestamp', -1).limit(50).toArray();
+            var logs = await logsStore.find({ category: { $eq: req.query.category } }).sort('timestamp', -1).limit(50).toArray();
             logsStore.client.close();
             res.json(logs);
         } catch (e) {

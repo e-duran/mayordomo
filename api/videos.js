@@ -32,7 +32,7 @@ exports.register = function (app) {
             
             video.modifiedAt = new Date();
             var result;
-            var filter = { channelId: channelId };
+            var filter = { channelId: { $eq: channelId } };
             videoStore = await global.getStore('videos');
             var existingVideo = await videoStore.findOne(filter);
             if (!existingVideo) {

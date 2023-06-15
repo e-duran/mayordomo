@@ -23,9 +23,9 @@ async function processVideosInPlaylist(playlist) {
         playlistItemStore = await global.getStore('playlistItems');
         const save = async (video) => {
             video.modifiedAt = new Date();
-            await playlistItemStore.findOneAndReplace({ playlistItemId: video.playlistItemId }, video, { returnOriginal: false, upsert: true });
+            await playlistItemStore.findOneAndReplace({ playlistItemId: { $eq: video.playlistItemId } }, video, { returnOriginal: false, upsert: true });
         }
-        const savedPlaylistItems = await playlistItemStore.find({ playlistId: playlist.id }).toArray();
+        const savedPlaylistItems = await playlistItemStore.find({ playlistId: { $eq: playlist.id } }).toArray();
         savedPlaylistItems.forEach(savedPlaylistItem => {
             const foundPlaylistItem = playlistItems.find(playlistItem => playlistItem.id === savedPlaylistItem.playlistItemId);
             savedPlaylistItem.isInPlaylist = foundPlaylistItem !== undefined;

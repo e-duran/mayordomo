@@ -82,7 +82,7 @@ exports.execute = async function (req, res) {
             let movie = movies[i];
             var action = 'created';
             var result = null;
-            var filterByUrl = { movieInsiderUrl: movie.movieInsiderUrl };
+            var filterByUrl = { movieInsiderUrl: { $eq: movie.movieInsiderUrl } };
             var existingMovie = existingMovies[i] || await movieStore.findOne(filterByUrl);
             if (existingMovie) {
                 action = 'updated';
