@@ -115,6 +115,15 @@ exports.execute = async function (req, res) {
         log = function (message, error, noEnd) { global.log(res, message, error, noEnd) };
         if (!global.config) global.config = await global.getConfig();
         config = global.config;
+        const sendMail = async (message) => {
+            var mail = {
+                from: config.stockWatchListFrom,
+                to: config.stockWatchListTo,
+                subject: `Videos in playlists where deleted or set to private`,
+                html: message
+            };
+            await global.sendMail(res, config, mail, log);
+        };
 
         const { google } = require('googleapis');
         const authClient = require('./oauthClient');
@@ -145,13 +154,3 @@ exports.execute = async function (req, res) {
         log('Exception', e);
     }
 };
-
-async function sendMail(message) {
-    var mail = {
-        from: config.stockWatchListFrom,
-        to: config.stockWatchListTo,
-        subject: `Videos in playlists where deleted or set to private`,
-        html: message
-    };
-    await global.sendMail(config, mail, log);
-}

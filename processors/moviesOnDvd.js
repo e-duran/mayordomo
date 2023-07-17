@@ -30,20 +30,19 @@ function updateMovie(movie, movieInfo, config) {
     return movie;
 }
 
-async function sendMail(config, body, log) {
-    var mail = {
-        from: config.stockWatchListFrom,
-        to: config.stockWatchListTo,
-        subject: `Error in movies post-processing`,
-        html: body
-    };
-    await global.sendMail(config, mail, log);
-}
-
 exports.execute = async function (req, res) {
     res.type('text/plain; charset=utf-8');
     
     var log = function (message, error, noEnd) { global.log(res, message, error, noEnd) };
+    const sendMail = async (config, body, log) => {
+        var mail = {
+            from: config.stockWatchListFrom,
+            to: config.stockWatchListTo,
+            subject: `Error in movies post-processing`,
+            html: body
+        };
+        await global.sendMail(res, config, mail, log);
+    };
     var movieStore = null;
     
     try {

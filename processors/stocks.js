@@ -32,7 +32,7 @@ exports.execute = async function (req, res) {
                     html: `The stock ${quote} is at or over the notification limit ${priceLimit} as of ${dateTime}<br>
                     See <a href="https://www.google.com/finance?q=${quote}">Finance</a> for more details`
                 };
-                await global.sendMail(config, mail, log);
+                await global.sendMail(res, config, mail, log);
             } else {
                 log(`Stock ${quote} is at ${price}, which is under the limit ${priceLimit}, no further action taken.`);
             }

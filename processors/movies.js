@@ -9,6 +9,15 @@ exports.execute = async function (req, res) {
     try {
         if (!global.config) global.config = await global.getConfig(); 
         var config = global.config;
+        const sendMail = async (message) => {
+            var mail = {
+                from: config.stockWatchListFrom,
+                to: config.stockWatchListTo,
+                subject: `Error in processing of movies`,
+                html: message
+            };
+            await global.sendMail(res, config, mail, log);
+        };
         let isRerun = false;
         var movieTitles = [],
             movieUrls = []; 
@@ -57,7 +66,7 @@ exports.execute = async function (req, res) {
         }
         
         const keyPropertiesErrorMessages = [];
-        const keyProperties = ['poster', 'rated', 'genre', 'duration', 'releaseScope', 'releasedDate', 'director', 'writer', 'needsReview','imdbId'];
+        const keyProperties = ['poster', 'rated', 'genre', 'releaseScope', 'releasedDate', 'director', 'writer', 'needsReview', 'imdbId'];
         let hasSameKeyValues = false;
         for (const keyProperty of keyProperties) {
             const allValues = movies.map(movie => movie[keyProperty]);
@@ -120,16 +129,6 @@ exports.execute = async function (req, res) {
     }
 };
 
-async function sendMail(message) {
-    var mail = {
-        from: config.stockWatchListFrom,
-        to: config.stockWatchListTo,
-        subject: `Error in processing of movies`,
-        html: message
-    };
-    await global.sendMail(config, mail, log);
-}
-
 async function getMovieFromPage(log, axios, getRequestConfig, cheerio, moviePageUrl, movieTitle) {
     try {
         var moviePageResponse = await axios.get(moviePageUrl, getRequestConfig);
@@ -147,7 +146,7 @@ async function getMovieFromPage(log, axios, getRequestConfig, cheerio, moviePage
            movie.genre += $(this).text().trim() + ', ';
         });
         if (movie.genre) { movie.genre = movie.genre.substring(0, movie.genre.length - 2); }
-        movie.duration = $('span[itemprop="duration"] strong').eq(0).text().trim();
+        //movie.duration = $('span[itemprop="duration"] strong').eq(0).text().trim();
         movie.plot = $('p[itemprop="description"]').text().trim();
         let releaseParagraph = $('.fa.fa-calendar-o.fa-fw').eq(1).parent().parent().next();
         let releaseScope = releaseParagraph.contents().eq(-1).text().trim();
