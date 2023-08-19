@@ -71,7 +71,7 @@ exports.execute = async function (req, res) {
         for (const keyProperty of keyProperties) {
             const allValues = movies.map(movie => movie[keyProperty]);
             let allValuesAreSame = allValues.every(value => value === allValues[0]);
-            allValuesAreSame = keyProperty === 'needsReview' ? allValuesAreSame === true : allValuesAreSame;
+            allValuesAreSame = keyProperty === 'needsReview' ? allValues[0] === true : allValuesAreSame;
             hasSameKeyValues = hasSameKeyValues || allValuesAreSame;
             if (allValuesAreSame) {
                 const message = `ERROR: Property ${keyProperty} is the same for all movies.`;
