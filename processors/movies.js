@@ -5,35 +5,32 @@ exports.execute = async function (req, res) {
     
     var log = function (message, error) { global.log(res, message, error) };
     var movieStore = null;
+    if (!global.config) global.config = await global.getConfig(); 
+    var config = global.config;
+    const makeSendMail = async (message) => {
+        var mail = {
+            from: config.stockWatchListFrom,
+            to: config.stockWatchListTo,
+            subject: `Error in processing of movies`,
+            html: message
+        };
+        await global.sendMail(res, config, mail, log);
+    };
+    var movieTitles = [],
+        movieUrls = []; 
+
+    var axios = require('axios');
+    var getRequestConfig = {
+        headers: {
+            'User-Agent': config.moviesPostProcessorUserAgent,
+            'Accept': 'text/html'
+        }
+    }
+    var cheerio = require('cheerio');
+    let existingMovies = [];
     
     try {
-        if (!global.config) global.config = await global.getConfig(); 
-        var config = global.config;
-        const sendMail = async (message) => {
-            var mail = {
-                from: config.stockWatchListFrom,
-                to: config.stockWatchListTo,
-                subject: `Error in processing of movies`,
-                html: message
-            };
-            await global.sendMail(res, config, mail, log);
-        };
-        let isRerun = false;
-        var movieTitles = [],
-            movieUrls = []; 
-    
-        var axios = require('axios');
-        var getRequestConfig = {
-            headers: {
-                'User-Agent': config.moviesPostProcessorUserAgent,
-                'Accept': 'text/html'
-            }
-        }
-        var cheerio = require('cheerio');
-        let existingMovies = [];
-
         if (req.query.from) {
-            isRerun = true;
             movieStore = await global.getStore('movies');
             const filter = { createdAt: { $gt: new Date(req.query.from) } };
             existingMovies = await movieStore.find(filter).toArray();
@@ -81,7 +78,7 @@ exports.execute = async function (req, res) {
         }
         if (hasSameKeyValues) {
             const message = 'There is a problem with the query selectors used to parse the following properties: <br>' + keyPropertiesErrorMessages.join('<br>');
-            await sendMail(message);
+            await makeSendMail(message);
             movies = [];
         }
 
@@ -122,7 +119,7 @@ exports.execute = async function (req, res) {
     } catch (e) {
         log('Exception', e);
         const message = 'Unhandled exception - ' + (e.stack ? e.stack : e);
-        await sendMail(message);
+        await makeSendMail(message);
         if (movieStore) {
             movieStore.client.close();
         }
