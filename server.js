@@ -67,12 +67,12 @@ global.sendMail = async function (res, config, mail, log) {
     const formData = require('form-data');
     const Mailgun = require('mailgun.js');
     const mailgun = new Mailgun(formData);
-    const mg = mailgun.client({ username: 'api', key: config.mailgunApiKey });
+    const mg = mailgun.client({ username: 'api', key: global.config.mailgunApiKey });
 
     try {
-        await mg.messages.create(config.mailgunDomain, mail);
+        await mg.messages.create(global.config.mailgunDomain, mail);
     } catch (error) {
-        log(res, 'Error while sending mail', error);
+        global.log(res, 'Error while sending mail', error);
     }
 }
 
