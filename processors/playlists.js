@@ -66,9 +66,8 @@ async function processVideosInPlaylist(playlist) {
 }
 
 async function processVideo(video, playlist, save, savedPlaylistItem) {
+    const videoId = video.videoId;
     try {
-        const videoId = video.videoId;
-        
         if (video.status === 'private') {
             video.isMissing = true;
             video.action = 'was set to private';

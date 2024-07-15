@@ -72,7 +72,7 @@ global.sendMail = async function (res, config, mail, log) {
     try {
         await mg.messages.create(global.config.mailgunDomain, mail);
     } catch (error) {
-        global.log(res, 'Error while sending mail', error);
+        global.log(res, 'Error while sending mail', error, true);
     }
 }
 
