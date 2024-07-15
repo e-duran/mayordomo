@@ -134,7 +134,6 @@ exports.execute = async function (req, res) {
             auth: authenticatedClient,
         });
 
-        allVideosMap = {};
         for (const playlist of global.config.videoPlaylistsForProcessing) {
             await processVideosInPlaylist(playlist);
         }
@@ -142,7 +141,7 @@ exports.execute = async function (req, res) {
         let message = '';
         Object.values(allVideosMap).forEach(video => {
             if (video.isMissing) {
-                message += `Video ${video.videoId} from playlist ${video.playlistName || playlist.name} ${video.action}<br>`;
+                message += `Video ${video.videoId} from playlist ${video.playlistName} ${video.action}<br>`;
             }
         });
         if (message.length > 0) {
