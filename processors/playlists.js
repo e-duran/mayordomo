@@ -1,7 +1,6 @@
 'use strict';
 
-let log, config, youtube;
-let allVideosMap = {};
+let log, config, youtube, allVideosMap;
 const printPlaylistName = (playlist) => `${playlist.name} (${playlist.id})`;
 
 async function processVideosInPlaylist(playlist) {
@@ -114,6 +113,7 @@ exports.execute = async function (req, res) {
         log = function (message, error, noEnd) { global.log(res, message, error, noEnd) };
         if (!global.config) global.config = await global.getConfig();
         config = global.config;
+        allVideosMap = {};
         const sendMail = async (message) => {
             var mail = {
                 from: config.stockWatchListFrom,
