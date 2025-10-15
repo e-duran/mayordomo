@@ -172,12 +172,15 @@ async function getVideoDetails(video) {
   if (videoItem.liveStreamingDetails && videoItem.liveStreamingDetails.scheduledStartTime) {
     video.isScheduled = new Date(videoItem.liveStreamingDetails.scheduledStartTime) > new Date();
   }
+  if (video.isScheduled) {
+    return;
+  }
   
-  let duration = response.result.items[0].contentDetails.duration;
+  let duration = videoItem.contentDetails.duration;
   let iso8601DurationRegex = /^P([0-9]+(?:[,\.][0-9]+)?Y)?([0-9]+(?:[,\.][0-9]+)?M)?([0-9]+(?:[,\.][0-9]+)?D)?(?:T([0-9]+(?:[,\.][0-9]+)?H)?([0-9]+(?:[,\.][0-9]+)?M)?([0-9]+(?:[,\.][0-9]+)?S)?)?$/;
   let result = iso8601DurationRegex.exec(duration);
   if (!result) {
-    console.warn(`Cannot parse duration string ${duration} for video ${videoId}`);
+    console.warn(`Cannot parse duration string ${duration} for video ${video.Id} of channel ${video.channelTitle}`);
     return;
   }
   let hours = result[4] ? result[4].replace('H', '') : '';
