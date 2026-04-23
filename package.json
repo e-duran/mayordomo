@@ -16,7 +16,7 @@
     "express": "^4.22.1",
     "express-rate-limit": "^6.4.0",
     "form-data": "^4.0.4",
-    "googleapis": "^92.0.0",
+    "googleapis": "^171.4.0",
     "mailgun.js": "^8.2.2",
     "method-override": "^2.3.10",
     "moment-timezone": "^0.5.37",
